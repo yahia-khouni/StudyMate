@@ -1,0 +1,231 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Background & Foreground */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    /* Card - warm tone for glassmorphism */
+    --card: 30 30% 98%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Primary - Modern blue/indigo */
+    --primary: 238.7 83.5% 66.7%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary - Purple */
+    --secondary: 262.1 83.3% 57.8%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Accent - Warm orange */
+    --accent: 24.6 95% 53.1%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Destructive */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Border & Input */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 238.7 83.5% 66.7%;
+
+    /* Border Radius */
+    --radius: 0.75rem;
+
+    /* Chart colors */
+    --chart-1: 238.7 83.5% 66.7%;
+    --chart-2: 262.1 83.3% 57.8%;
+    --chart-3: 24.6 95% 53.1%;
+    --chart-4: 43 96% 56%;
+    --chart-5: 174 84% 46%;
+  }
+
+  .dark {
+    /* Background & Foreground */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    /* Card - warm dark tone */
+    --card: 222.2 47% 11.2%;
+    --card-foreground: 210 40% 98%;
+
+    /* Popover */
+    --popover: 222.2 47% 11.2%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary - Modern blue/indigo */
+    --primary: 238.7 83.5% 66.7%;
+    --primary-foreground: 222.2 47% 11.2%;
+
+    /* Secondary - Purple */
+    --secondary: 262.1 83.3% 57.8%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    /* Accent - Warm orange */
+    --accent: 24.6 95% 53.1%;
+    --accent-foreground: 222.2 47% 11.2%;
+
+    /* Destructive */
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Border & Input */
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 238.7 83.5% 66.7%;
+
+    /* Chart colors */
+    --chart-1: 238.7 83.5% 66.7%;
+    --chart-2: 262.1 83.3% 57.8%;
+    --chart-3: 24.6 95% 53.1%;
+    --chart-4: 43 96% 56%;
+    --chart-5: 174 84% 46%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply relative backdrop-blur-md bg-white/70 dark:bg-gray-900/70 
+           border border-white/20 dark:border-gray-700/30 
+           shadow-glass rounded-xl;
+  }
+
+  .glass-card-sm {
+    @apply relative backdrop-blur-sm bg-white/60 dark:bg-gray-900/60 
+           border border-white/15 dark:border-gray-700/20 
+           shadow-glass-sm rounded-lg;
+  }
+
+  .glass-card-lg {
+    @apply relative backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 
+           border border-white/25 dark:border-gray-700/40 
+           shadow-glass-lg rounded-2xl;
+  }
+
+  /* Gradient backgrounds */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-secondary;
+  }
+
+  .gradient-warm {
+    @apply bg-gradient-to-r from-brand-orange to-brand-amber;
+  }
+
+  .gradient-bg {
+    @apply bg-gradient-to-br from-primary/5 via-background to-accent/5;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 
+           bg-primary text-primary-foreground font-medium 
+           hover:bg-primary/90 transition-colors
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 
+           bg-secondary text-secondary-foreground font-medium 
+           hover:bg-secondary/90 transition-colors
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 
+           bg-accent text-accent-foreground font-medium 
+           hover:bg-accent/90 transition-colors
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Streak flame effect */
+  .streak-flame {
+    @apply text-accent animate-pulse;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 rounded-full bg-muted overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full gradient-primary transition-all duration-500;
+  }
+
+  /* Loading shimmer */
+  .shimmer {
+    @apply relative overflow-hidden;
+  }
+
+  .shimmer::after {
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r 
+           from-transparent via-white/20 to-transparent animate-shimmer;
+    content: '';
+  }
+}
+
+@layer utilities {
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-clip-text text-transparent gradient-primary;
+  }
+
+  /* Scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+}
