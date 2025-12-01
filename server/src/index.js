@@ -2,9 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const passport = require('./config/passport');
 const logger = require('./config/logger');
 
 const app = express();
@@ -31,6 +33,12 @@ app.use(
   })
 );
 
+// Cookie parser
+app.use(cookieParser());
+
+// Initialize Passport
+app.use(passport.initialize());
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -38,6 +46,16 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' },
 });
 app.use('/api', limiter);
+
+// Stricter rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per 15 minutes
+  message: { error: 'Too many attempts, please try again later.' },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -48,8 +66,8 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API Routes (to be added in Phase 2+)
-// app.use('/api/auth', require('./routes/auth'));
+// API Routes
+app.use('/api/auth', require('./routes/auth'));
 // app.use('/api/users', require('./routes/users'));
 // app.use('/api/courses', require('./routes/courses'));
 // app.use('/api/chapters', require('./routes/chapters'));
