@@ -67,12 +67,12 @@ app.get('/health', (_req, res) => {
 });
 
 // API Routes
-app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/users', require('./routes/users'));
-// app.use('/api/courses', require('./routes/courses'));
-// app.use('/api/chapters', require('./routes/chapters'));
-// app.use('/api/calendar', require('./routes/calendar'));
-// app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/auth', require('./routes/auth.routes'));
+// app.use('/api/users', require('./routes/users.routes'));
+// app.use('/api/courses', require('./routes/courses.routes'));
+// app.use('/api/chapters', require('./routes/chapters.routes'));
+// app.use('/api/calendar', require('./routes/calendar.routes'));
+// app.use('/api/notifications', require('./routes/notifications.routes'));
 
 // 404 handler
 app.use((_req, res) => {

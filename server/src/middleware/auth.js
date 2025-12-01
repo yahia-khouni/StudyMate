@@ -1,4 +1,4 @@
-const { verifyAccessToken, findUserById } = require('../services/auth.service');
+const { verifyAccessToken, getUserById } = require('../services/auth.service');
 const logger = require('../config/logger');
 
 /**
@@ -17,22 +17,13 @@ async function authenticate(req, res, next) {
     const decoded = verifyAccessToken(token);
     
     // Get fresh user data
-    const user = await findUserById(decoded.sub);
+    const user = await getUserById(decoded.sub);
     
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }
     
-    req.user = {
-      id: user.id,
-      email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      emailVerified: user.email_verified,
-      languagePreference: user.language_preference,
-      timezone: user.timezone,
-      avatarUrl: user.avatar_url,
-    };
+    req.user = user;
     
     next();
   } catch (error) {
@@ -76,19 +67,10 @@ async function optionalAuth(req, res, next) {
     const token = authHeader.substring(7);
     const decoded = verifyAccessToken(token);
     
-    const user = await findUserById(decoded.sub);
+    const user = await getUserById(decoded.sub);
     
     if (user) {
-      req.user = {
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        emailVerified: user.email_verified,
-        languagePreference: user.language_preference,
-        timezone: user.timezone,
-        avatarUrl: user.avatar_url,
-      };
+      req.user = user;
     }
     
     next();
