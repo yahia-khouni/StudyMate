@@ -36,7 +36,7 @@ export default function LoginPage() {
       const response = await login(data);
       setUser(response.user);
       toast.success(t('auth.loginSuccess', 'Welcome back!'));
-      navigate('/dashboard');
+      navigate('/courses');
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {

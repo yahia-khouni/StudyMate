@@ -39,7 +39,16 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'studyai-auth',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({ 
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated,
+      }),
+      onRehydrateStorage: () => (state) => {
+        // After hydration from storage, set loading to false
+        if (state) {
+          state.isLoading = false;
+        }
+      },
     }
   )
 );

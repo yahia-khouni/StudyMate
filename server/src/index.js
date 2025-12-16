@@ -6,8 +6,11 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 const passport = require('./config/passport');
 const logger = require('./config/logger');
+const { initializeWorkers, shutdownWorkers, isHealthy: workersHealthy } = require('./jobs');
+const notificationService = require('./services/notification.service');
 
 const app = express();
 const httpServer = createServer(app);
@@ -20,6 +23,9 @@ const io = new Server(httpServer, {
     credentials: true,
   },
 });
+
+// Initialize notification service with WebSocket
+notificationService.initializeWebSocket(io);
 
 // Make io accessible to routes
 app.set('io', io);
@@ -62,17 +68,34 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/health', async (_req, res) => {
+  // Check vector store connectivity (SQLite-based)
+  let vectorStoreHealthy = false;
+  try {
+    const embeddingService = require('./services/embedding.service');
+    vectorStoreHealthy = await embeddingService.verifyConnection();
+  } catch (e) {
+    // Vector store not available
+  }
+  
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    workers: workersHealthy() ? 'healthy' : 'unhealthy',
+    vectorStore: vectorStoreHealthy ? 'connected' : 'disconnected',
+    connectedClients: notificationService.getConnectedUserCount(),
+  });
 });
+
+// Serve uploaded files statically (for authorized users)
+const { getUploadDir } = require('./services/upload.service');
+app.use('/uploads', express.static(getUploadDir()));
 
 // API Routes
 app.use('/api/auth', require('./routes/auth.routes'));
-// app.use('/api/users', require('./routes/users.routes'));
-// app.use('/api/courses', require('./routes/courses.routes'));
-// app.use('/api/chapters', require('./routes/chapters.routes'));
-// app.use('/api/calendar', require('./routes/calendar.routes'));
-// app.use('/api/notifications', require('./routes/notifications.routes'));
+app.use('/api/courses', require('./routes/course.routes'));
+app.use('/api/notifications', require('./routes/notification.routes'));
+app.use('/api', require('./routes/learning.routes'));
 
 // 404 handler
 app.use((_req, res) => {
@@ -87,25 +110,42 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-// Socket.io connection handling
-io.on('connection', (socket) => {
-  logger.info(`Client connected: ${socket.id}`);
-
-  socket.on('join', (userId) => {
-    socket.join(`user:${userId}`);
-    logger.info(`User ${userId} joined their room`);
-  });
-
-  socket.on('disconnect', () => {
-    logger.info(`Client disconnected: ${socket.id}`);
-  });
-});
-
 // Start server
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Initialize background workers
+  initializeWorkers();
 });
+
+// Graceful shutdown
+const gracefulShutdown = async (signal) => {
+  logger.info(`Received ${signal}. Starting graceful shutdown...`);
+  
+  try {
+    // Close HTTP server
+    httpServer.close(() => {
+      logger.info('HTTP server closed');
+    });
+    
+    // Shutdown workers
+    await shutdownWorkers();
+    
+    // Close database connections
+    const pool = require('./config/database');
+    await pool.end();
+    logger.info('Database connections closed');
+    
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = { app, io };

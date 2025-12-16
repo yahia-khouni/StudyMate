@@ -30,3 +30,30 @@ export {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 export { Toaster } from './sonner';
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './dialog';
+export { Badge, badgeVariants } from './badge';
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+} from './select';
+export { Textarea } from './textarea';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export { Collapsible, CollapsibleTrigger, CollapsibleContent } from './collapsible';
+export { ScrollArea, ScrollBar } from './scroll-area';
