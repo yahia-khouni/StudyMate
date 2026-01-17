@@ -7,6 +7,7 @@ const FlashcardModel = require('../models/flashcard.model');
 const ChapterModel = require('../models/chapter.model');
 const MaterialModel = require('../models/material.model');
 const aiService = require('./ai.service');
+const streakService = require('./streak.service');
 const logger = require('../config/logger');
 
 // Default configuration
@@ -150,6 +151,15 @@ async function recordReview(flashcardId, userId, quality) {
   const progress = await FlashcardModel.updateProgressSM2(flashcardId, userId, quality);
   
   logger.info(`Review recorded for flashcard ${flashcardId}: quality=${quality}, next review in ${progress.intervalDays} days`);
+  
+  // Log activity for streak tracking
+  try {
+    await streakService.logActivityAndUpdateStreak(userId, 'flashcard_review', 'flashcard', flashcardId);
+    logger.info(`Activity logged for streak: flashcard review by user ${userId}`);
+  } catch (streakError) {
+    // Don't fail the review if streak logging fails
+    logger.warn(`Failed to log activity for streak: ${streakError.message}`);
+  }
   
   return {
     flashcardId,

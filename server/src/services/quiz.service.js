@@ -7,6 +7,7 @@ const QuizModel = require('../models/quiz.model');
 const ChapterModel = require('../models/chapter.model');
 const MaterialModel = require('../models/material.model');
 const aiService = require('./ai.service');
+const streakService = require('./streak.service');
 const logger = require('../config/logger');
 
 // Default configuration
@@ -182,6 +183,15 @@ async function submitAttempt(quizId, userId, answers, timeTakenSeconds = 0) {
   });
   
   logger.info(`Quiz attempt recorded: ${attempt.id} - Score: ${score.toFixed(1)}% - ${passed ? 'PASSED' : 'FAILED'}`);
+  
+  // Log activity for streak tracking
+  try {
+    await streakService.logActivityAndUpdateStreak(userId, 'quiz', 'quiz', quizId);
+    logger.info(`Activity logged for streak: quiz attempt by user ${userId}`);
+  } catch (streakError) {
+    // Don't fail the quiz submission if streak logging fails
+    logger.warn(`Failed to log activity for streak: ${streakError.message}`);
+  }
   
   // Add result details to response
   attempt.correctCount = correctCount;

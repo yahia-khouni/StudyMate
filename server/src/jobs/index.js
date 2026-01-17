@@ -6,6 +6,7 @@
 const { closeAll, QUEUE_NAMES, getQueueStats } = require('./queue');
 const { createDocumentProcessingWorker } = require('./document.worker');
 const { createEmbeddingGenerationWorker } = require('./embedding.worker');
+const { initializeReminderWorker, scheduleReminderJobs } = require('./reminder.worker');
 const logger = require('../config/logger');
 
 let workers = {};
@@ -15,7 +16,7 @@ let initialized = false;
  * Initialize all workers
  * Call this in the main server file
  */
-function initializeWorkers() {
+async function initializeWorkers() {
   if (initialized) {
     logger.warn('Workers already initialized');
     return;
@@ -28,8 +29,14 @@ function initializeWorkers() {
     // Embedding generation worker
     workers.embeddingGeneration = createEmbeddingGenerationWorker();
     
+    // Reminder worker (deadline + streak reminders)
+    workers.reminder = initializeReminderWorker();
+    
+    // Schedule recurring reminder jobs
+    await scheduleReminderJobs();
+    
     initialized = true;
-    logger.info('All workers initialized (document processing, embedding generation)');
+    logger.info('All workers initialized (document processing, embedding generation, reminders)');
   } catch (error) {
     logger.error('Failed to initialize workers:', error);
     // Don't throw - allow server to start without workers

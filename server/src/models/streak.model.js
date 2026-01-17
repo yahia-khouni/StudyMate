@@ -38,28 +38,49 @@ async function findByUserId(userId) {
  * @param {Object} updates
  * @returns {Promise<void>}
  */
-async function update(userId, { currentStreak, longestStreak, lastActivityDate }) {
-  const updates = [];
+async function update(userId, updates) {
+  const {
+    currentStreak,
+    currentStreakStart,
+    longestStreak,
+    longestStreakStart,
+    longestStreakEnd,
+    lastActivityDate
+  } = updates;
+  
+  const fields = [];
   const values = [];
   
   if (currentStreak !== undefined) {
-    updates.push('current_streak = ?');
+    fields.push('current_streak = ?');
     values.push(currentStreak);
   }
+  if (currentStreakStart !== undefined) {
+    fields.push('current_streak_start = ?');
+    values.push(currentStreakStart);
+  }
   if (longestStreak !== undefined) {
-    updates.push('longest_streak = ?');
+    fields.push('longest_streak = ?');
     values.push(longestStreak);
   }
+  if (longestStreakStart !== undefined) {
+    fields.push('longest_streak_start = ?');
+    values.push(longestStreakStart);
+  }
+  if (longestStreakEnd !== undefined) {
+    fields.push('longest_streak_end = ?');
+    values.push(longestStreakEnd);
+  }
   if (lastActivityDate !== undefined) {
-    updates.push('last_activity_date = ?');
+    fields.push('last_activity_date = ?');
     values.push(lastActivityDate);
   }
   
-  if (updates.length === 0) return;
+  if (fields.length === 0) return;
   
   values.push(userId);
   await db.query(
-    `UPDATE streaks SET ${updates.join(', ')} WHERE user_id = ?`,
+    `UPDATE streaks SET ${fields.join(', ')} WHERE user_id = ?`,
     values
   );
 }
@@ -71,7 +92,7 @@ async function update(userId, { currentStreak, longestStreak, lastActivityDate }
  */
 async function reset(userId) {
   await db.query(
-    `UPDATE streaks SET current_streak = 0 WHERE user_id = ?`,
+    `UPDATE streaks SET current_streak = 0, current_streak_start = NULL WHERE user_id = ?`,
     [userId]
   );
 }

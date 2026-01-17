@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { CreateCourseDialog } from '@/components/courses/CreateCourseDialog';
 import { EditCourseDialog } from '@/components/courses/EditCourseDialog';
+import { StreakWidget } from '@/components/dashboard/StreakWidget';
 
 export function CoursesListPage() {
   const { t } = useTranslation();
@@ -82,6 +83,11 @@ export function CoursesListPage() {
           <Plus className="mr-2 h-4 w-4" />
           {t('courses.create')}
         </Button>
+      </div>
+
+      {/* Streak Widget */}
+      <div className="mb-8">
+        <StreakWidget />
       </div>
 
       {courses.length === 0 ? (

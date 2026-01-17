@@ -7,6 +7,7 @@ const ChatModel = require('../models/chat.model');
 const CourseModel = require('../models/course.model');
 const aiService = require('./ai.service');
 const embeddingService = require('./embedding.service');
+const streakService = require('./streak.service');
 const logger = require('../config/logger');
 
 // Configuration
@@ -159,6 +160,15 @@ async function sendMessage(sessionId, userId, message) {
     });
     
     logger.info(`Assistant response saved for session ${sessionId}`);
+    
+    // Log activity for streak tracking
+    try {
+      await streakService.logActivityAndUpdateStreak(userId, 'chat', 'chat_session', sessionId);
+      logger.info(`Activity logged for streak: chat by user ${userId}`);
+    } catch (streakError) {
+      // Don't fail the chat if streak logging fails
+      logger.warn(`Failed to log activity for streak: ${streakError.message}`);
+    }
     
     return {
       userMessage,

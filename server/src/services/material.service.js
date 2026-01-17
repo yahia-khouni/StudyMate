@@ -8,6 +8,7 @@ const ChapterModel = require('../models/chapter.model');
 const CourseModel = require('../models/course.model');
 const { deleteFile, getFileInfo } = require('./upload.service');
 const documentService = require('./document.service');
+const streakService = require('./streak.service');
 const logger = require('../config/logger');
 
 // Max storage per user: 10GB (effectively unlimited for development)
@@ -50,6 +51,15 @@ async function createMaterial(chapterId, userId, file) {
   
   // Material created in 'pending' status - processing must be started manually
   logger.info(`Material created: ${material.id} for chapter ${chapterId} (pending processing)`);
+  
+  // Log activity for streak tracking
+  try {
+    await streakService.logActivityAndUpdateStreak(userId, 'upload', 'material', material.id);
+    logger.info(`Activity logged for streak: upload by user ${userId}`);
+  } catch (streakError) {
+    // Don't fail the upload if streak logging fails
+    logger.warn(`Failed to log activity for streak: ${streakError.message}`);
+  }
   
   return material;
 }

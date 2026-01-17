@@ -19,6 +19,9 @@ const CoursesListPage = lazy(() => import('@/pages/courses/CoursesListPage'));
 const CourseDetailPage = lazy(() => import('@/pages/courses/CourseDetailPage'));
 const ChapterViewPage = lazy(() => import('@/pages/courses/ChapterViewPage'));
 
+// Calendar page
+const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
+
 // Layout
 const MainLayout = lazy(() => import('@/components/MainLayout'));
 
@@ -146,6 +149,7 @@ const router = createBrowserRouter(
             { path: '/courses', element: <Suspense fallback={<PageLoader />}><CoursesListPage /></Suspense> },
             { path: '/courses/:courseId', element: <Suspense fallback={<PageLoader />}><CourseDetailPage /></Suspense> },
             { path: '/courses/:courseId/chapters/:chapterId', element: <Suspense fallback={<PageLoader />}><ChapterViewPage /></Suspense> },
+            { path: '/calendar', element: <Suspense fallback={<PageLoader />}><CalendarPage /></Suspense> },
           ],
         },
       ],

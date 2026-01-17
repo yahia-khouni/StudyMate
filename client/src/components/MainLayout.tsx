@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, LogOut, User, Settings } from 'lucide-react';
+import { BookOpen, LogOut, User, Settings, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -56,6 +56,12 @@ export function MainLayout() {
             <Link to="/courses">
               <Button variant="ghost" size="sm">
                 {t('nav.courses', 'Courses')}
+              </Button>
+            </Link>
+            <Link to="/calendar">
+              <Button variant="ghost" size="sm">
+                <Calendar className="mr-2 h-4 w-4" />
+                {t('nav.calendar', 'Calendar')}
               </Button>
             </Link>
             {/* Add more nav links as features are implemented */}
