@@ -5,7 +5,6 @@ import { Plus, BookOpen, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { getCourses, deleteCourse, type Course } from '@/services';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
   DropdownMenu,
@@ -17,12 +16,14 @@ import { toast } from 'sonner';
 import { CreateCourseDialog } from '@/components/courses/CreateCourseDialog';
 import { EditCourseDialog } from '@/components/courses/EditCourseDialog';
 import { StreakWidget } from '@/components/dashboard/StreakWidget';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 export function CoursesListPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editCourse, setEditCourse] = useState<Course | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const {
     data,
@@ -41,6 +42,7 @@ export function CoursesListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       toast.success(t('courses.deleteSuccess'));
+      setDeleteConfirm(null);
     },
     onError: () => {
       toast.error(t('courses.deleteError'));
@@ -48,8 +50,12 @@ export function CoursesListPage() {
   });
 
   const handleDelete = (courseId: string) => {
-    if (confirm(t('courses.confirmDelete'))) {
-      deleteCourseMutation.mutate(courseId);
+    setDeleteConfirm(courseId);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      deleteCourseMutation.mutate(deleteConfirm);
     }
   };
 
@@ -73,14 +79,14 @@ export function CoursesListPage() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="p-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('courses.title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('courses.title')}</h1>
           <p className="text-muted-foreground">{t('courses.subtitle')}</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
           {t('courses.create')}
         </Button>
       </div>
@@ -91,17 +97,15 @@ export function CoursesListPage() {
       </div>
 
       {courses.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">{t('courses.empty')}</h3>
-            <p className="text-muted-foreground mb-4">{t('courses.emptyDescription')}</p>
-            <Button onClick={() => setIsCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('courses.createFirst')}
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl bg-card border border-border text-center py-12 px-6">
+          <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-foreground">{t('courses.empty')}</h3>
+          <p className="text-muted-foreground mb-4">{t('courses.emptyDescription')}</p>
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('courses.createFirst')}
+          </Button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => (
@@ -124,6 +128,17 @@ export function CoursesListPage() {
           onOpenChange={(open) => !open && setEditCourse(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        title={t('courses.deleteCourse')}
+        description={t('courses.confirmDelete')}
+        confirmText={t('common.delete')}
+        onConfirm={confirmDelete}
+        variant="danger"
+        loading={deleteCourseMutation.isPending}
+      />
     </div>
   );
 }
@@ -140,59 +155,85 @@ function CourseCard({ course, onEdit, onDelete }: CourseCardProps) {
   // Use progress from API response
   const progress = course.progress || 0;
 
+  // Status badge
+  const getStatus = (progress: number) => {
+    if (progress >= 90) return { label: t('status.completed', 'Completed'), className: 'status-badge-completed' };
+    if (progress >= 50) return { label: t('status.onTrack', 'On Track'), className: 'status-badge-success' };
+    return { label: t('status.needsReview', 'Needs Review'), className: 'status-badge-warning' };
+  };
+  const status = getStatus(progress);
+
   return (
-    <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="course-card group relative overflow-hidden">
+      {/* Color accent bar */}
       <div
-        className="absolute inset-x-0 top-0 h-1"
+        className="absolute inset-x-0 top-0 h-1 rounded-t-xl"
         style={{ backgroundColor: course.color || '#6366f1' }}
       />
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-        <Link to={`/courses/${course.id}`} className="flex-1">
-          <CardTitle className="text-lg hover:text-primary transition-colors line-clamp-2">
-            {course.title}
-          </CardTitle>
-        </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">{t('common.more')}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}>
-              <Edit className="mr-2 h-4 w-4" />
-              {t('common.edit')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={onDelete}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              {t('common.delete')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
-      <CardContent>
-        <Link to={`/courses/${course.id}`}>
-          {course.description && (
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{course.description}</p>
-          )}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('courses.progress')}</span>
-              <span className="font-medium">{progress}%</span>
+      
+      <div className="flex items-start gap-4 pt-2">
+        {/* Course Icon */}
+        <div 
+          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${course.color || '#6366f1'}20` }}
+        >
+          <BookOpen className="h-6 w-6" style={{ color: course.color || '#6366f1' }} />
+        </div>
+
+        {/* Course Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <Link to={`/courses/${course.id}`} className="flex-1 min-w-0">
+              <h3 className="font-semibold text-foreground truncate hover:text-primary transition-colors">
+                {course.title}
+              </h3>
+            </Link>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`status-badge ${status.className}`}>
+                {status.label}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                    <span className="sr-only">{t('common.more')}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    {t('common.edit')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={onDelete}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('common.delete')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <Progress value={progress} className="h-2" />
           </div>
-        </Link>
-      </CardContent>
-    </Card>
+
+          <Link to={`/courses/${course.id}`}>
+            {course.description && (
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{course.description}</p>
+            )}
+            <div className="space-y-1">
+              <Progress value={progress} className="h-2" />
+              <div className="flex justify-end">
+                <span className="text-xs text-muted-foreground">{progress}%</span>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 

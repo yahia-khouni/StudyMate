@@ -5,6 +5,22 @@ import App from './App';
 import './index.css';
 import './i18n';
 
+// Initialize theme before render to prevent flash
+const initTheme = () => {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  const root = document.documentElement;
+  root.classList.remove('light', 'dark');
+  
+  if (savedTheme === 'system') {
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    root.classList.add(systemTheme);
+  } else {
+    root.classList.add(savedTheme);
+  }
+};
+
+initTheme();
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {

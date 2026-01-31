@@ -36,9 +36,17 @@ export default function LoginPage() {
       const response = await login(data);
       setUser(response.user);
       toast.success(t('auth.loginSuccess', 'Welcome back!'));
-      navigate('/courses');
+      navigate('/dashboard');
     } catch (error) {
-      toast.error(getErrorMessage(error));
+      const errorMsg = getErrorMessage(error);
+      // Show more specific error messages
+      if (errorMsg.includes('credentials') || errorMsg.includes('password')) {
+        toast.error(t('auth.invalidCredentials', 'Invalid email or password'));
+      } else if (errorMsg.includes('network') || errorMsg.includes('Network')) {
+        toast.error(t('errors.networkError', 'Network error. Please check your connection.'));
+      } else {
+        toast.error(errorMsg);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -5,11 +5,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, parseISO, addWeeks, subWeeks, getHours, getMinutes } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, BookOpen, Clock, AlertCircle, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import calendarService, { CalendarEvent } from '@/services/calendar.service';
 import { EventModal } from '@/components/calendar/EventModal';
@@ -34,11 +33,18 @@ export default function CalendarPage() {
   const loadEvents = useCallback(async () => {
     try {
       setLoading(true);
-      const start = startOfMonth(currentDate);
-      const end = endOfMonth(currentDate);
-      // Extend range to include visible days from adjacent months
-      const rangeStart = startOfWeek(start, { weekStartsOn: 1 });
-      const rangeEnd = endOfWeek(end, { weekStartsOn: 1 });
+      let rangeStart: Date;
+      let rangeEnd: Date;
+      
+      if (viewMode === 'month') {
+        const start = startOfMonth(currentDate);
+        const end = endOfMonth(currentDate);
+        rangeStart = startOfWeek(start, { weekStartsOn: 1 });
+        rangeEnd = endOfWeek(end, { weekStartsOn: 1 });
+      } else {
+        rangeStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+        rangeEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+      }
       
       const data = await calendarService.getEventsByRange(rangeStart, rangeEnd);
       setEvents(data);
@@ -48,7 +54,7 @@ export default function CalendarPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentDate, t]);
+  }, [currentDate, viewMode, t]);
 
   useEffect(() => {
     loadEvents();
@@ -56,6 +62,18 @@ export default function CalendarPage() {
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1));
+  };
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    setCurrentDate(direction === 'prev' ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
+  };
+
+  const navigate = (direction: 'prev' | 'next') => {
+    if (viewMode === 'month') {
+      navigateMonth(direction);
+    } else {
+      navigateWeek(direction);
+    }
   };
 
   const goToToday = () => {
@@ -167,12 +185,133 @@ export default function CalendarPage() {
     );
   };
 
+  const renderWeekView = () => {
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const days: Date[] = [];
+    
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(weekStart, i));
+    }
+
+    // Hours from 6am to 11pm
+    const hours = Array.from({ length: 18 }, (_, i) => i + 6);
+
+    return (
+      <div className="overflow-auto">
+        <div className="min-w-[800px]">
+          {/* Header with days */}
+          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b">
+            <div className="p-2 text-center text-sm text-muted-foreground" />
+            {days.map((day, idx) => {
+              const isToday = isSameDay(day, new Date());
+              return (
+                <div
+                  key={idx}
+                  className={cn(
+                    'p-2 text-center border-l',
+                    isToday && 'bg-primary/5'
+                  )}
+                >
+                  <div className="text-sm text-muted-foreground">
+                    {format(day, 'EEE', { locale })}
+                  </div>
+                  <div className={cn(
+                    'text-lg font-semibold w-8 h-8 mx-auto flex items-center justify-center rounded-full',
+                    isToday && 'bg-primary text-primary-foreground'
+                  )}>
+                    {format(day, 'd')}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Time grid */}
+          <div className="relative">
+            {hours.map((hour) => (
+              <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b min-h-[60px]">
+                <div className="p-1 text-xs text-muted-foreground text-right pr-2 -mt-2">
+                  {format(new Date().setHours(hour, 0), 'h a')}
+                </div>
+                {days.map((day, dayIdx) => {
+                  const isToday = isSameDay(day, new Date());
+                  return (
+                    <div
+                      key={dayIdx}
+                      onClick={() => {
+                        const clickedDate = new Date(day);
+                        clickedDate.setHours(hour, 0, 0, 0);
+                        handleDateClick(clickedDate);
+                      }}
+                      className={cn(
+                        'border-l cursor-pointer hover:bg-muted/50 relative',
+                        isToday && 'bg-primary/5'
+                      )}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+
+            {/* Render events positioned absolutely */}
+            {days.map((day, dayIdx) => {
+              const dayEvents = getEventsForDate(day);
+              return dayEvents.map((event) => {
+                const eventDate = parseISO(event.start_date);
+                const eventHour = getHours(eventDate);
+                const eventMinute = getMinutes(eventDate);
+                
+                // Only show events within our time range (6am-11pm)
+                if (eventHour < 6 || eventHour > 23) return null;
+                
+                const top = (eventHour - 6) * 60 + eventMinute;
+                const duration = event.end_date 
+                  ? (parseISO(event.end_date).getTime() - eventDate.getTime()) / 60000
+                  : 60; // Default 1 hour
+                const height = Math.min(Math.max(duration, 30), 180); // Min 30px, max 3 hours
+
+                return (
+                  <div
+                    key={event.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEventClick(event);
+                    }}
+                    className={cn(
+                      'absolute rounded px-1 py-0.5 text-xs cursor-pointer overflow-hidden border',
+                      event.event_type === 'study' && 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200',
+                      event.event_type === 'deadline' && 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 border-amber-200',
+                      event.event_type === 'exam' && 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200',
+                      event.event_type === 'other' && 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200',
+                    )}
+                    style={{
+                      top: `${top}px`,
+                      left: `calc(60px + ${dayIdx} * ((100% - 60px) / 7) + 2px)`,
+                      width: `calc((100% - 60px) / 7 - 4px)`,
+                      height: `${height}px`,
+                    }}
+                    title={event.title}
+                  >
+                    <div className="font-medium truncate">{event.title}</div>
+                    <div className="text-[10px] opacity-75">
+                      {format(eventDate, 'h:mm a')}
+                    </div>
+                  </div>
+                );
+              });
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold">{t('calendar.title', 'Calendar')}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('calendar.title', 'Calendar')}</h1>
           <p className="text-muted-foreground">
             {t('calendar.subtitle', 'Manage your study schedule and deadlines')}
           </p>
@@ -197,14 +336,24 @@ export default function CalendarPage() {
       </div>
 
       {/* Navigation */}
-      <Card className="mb-6">
-        <CardContent className="py-4">
+      <div className="rounded-2xl bg-card border border-border mb-6">
+        <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => navigateMonth('prev')}>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => navigate('prev')}
+                aria-label={viewMode === 'month' ? t('calendar.previousMonth', 'Previous month') : t('calendar.previousWeek', 'Previous week')}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => navigateMonth('next')}>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => navigate('next')}
+                aria-label={viewMode === 'month' ? t('calendar.nextMonth', 'Next month') : t('calendar.nextWeek', 'Next week')}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button variant="ghost" onClick={goToToday}>
@@ -212,8 +361,11 @@ export default function CalendarPage() {
               </Button>
             </div>
             
-            <h2 className="text-xl font-semibold">
-              {format(currentDate, 'MMMM yyyy', { locale })}
+            <h2 className="text-xl font-semibold text-foreground">
+              {viewMode === 'month' 
+                ? format(currentDate, 'MMMM yyyy', { locale })
+                : `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d', { locale })} - ${format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d, yyyy', { locale })}`
+              }
             </h2>
 
             <div className="flex items-center gap-2">
@@ -233,30 +385,34 @@ export default function CalendarPage() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Calendar Grid */}
       {loading ? (
         <div className="h-[600px] flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
-      ) : (
+      ) : viewMode === 'month' ? (
         renderMonthView()
+      ) : (
+        <div className="rounded-2xl bg-card border border-border overflow-hidden">
+          <div className="p-0">
+            {renderWeekView()}
+          </div>
+        </div>
       )}
 
       {/* Upcoming Events Sidebar */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <div className="rounded-2xl bg-card border border-border mt-6">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
             <Clock className="h-5 w-5" />
             {t('calendar.upcomingEvents', 'Upcoming Events')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </h3>
           <UpcomingEventsList events={events} onEventClick={handleEventClick} />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Event Modal */}
       <EventModal

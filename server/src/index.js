@@ -93,10 +93,12 @@ app.use('/uploads', express.static(getUploadDir()));
 
 // API Routes
 app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/courses', require('./routes/course.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
 app.use('/api/calendar', require('./routes/calendar.routes'));
 app.use('/api/streaks', require('./routes/streak.routes'));
+app.use('/api/progress', require('./routes/progress.routes'));
 app.use('/api', require('./routes/learning.routes'));
 
 // 404 handler

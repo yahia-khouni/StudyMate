@@ -88,6 +88,29 @@ async function generateQuiz(chapterId, userId, options = {}) {
   const language = options.language || chapter.course.language || 'en';
   const difficulty = options.difficulty || DEFAULTS.DIFFICULTY;
   const questionCount = options.questionCount || DEFAULTS.QUESTION_COUNT;
+  const regenerate = options.regenerate || false;
+  
+  // Check if a quiz already exists for this chapter and language
+  const existingQuizzes = await QuizModel.findQuizzesByChapter(chapterId, language);
+  
+  if (existingQuizzes.length > 0 && !regenerate) {
+    // Check if the existing quiz has questions - if not, delete it and regenerate
+    const existingQuiz = await QuizModel.findQuizById(existingQuizzes[0].id);
+    if (existingQuiz && existingQuiz.questions && existingQuiz.questions.length > 0) {
+      logger.info(`Quiz already exists for chapter ${chapterId} in ${language} with ${existingQuiz.questions.length} questions, returning existing quiz`);
+      return existingQuiz;
+    } else {
+      // Quiz exists but has no questions - delete it and regenerate
+      logger.info(`Existing quiz for chapter ${chapterId} in ${language} has no questions, deleting and regenerating`);
+      await QuizModel.removeQuiz(existingQuizzes[0].id);
+    }
+  }
+  
+  // If regenerating, delete the existing quiz first
+  if (existingQuizzes.length > 0 && regenerate) {
+    logger.info(`Regenerating quiz for chapter ${chapterId} in ${language}, deleting existing quiz`);
+    await QuizModel.removeQuiz(existingQuizzes[0].id);
+  }
   
   logger.info(`Generating ${questionCount} ${difficulty} quiz questions for chapter ${chapterId} in ${language}`);
   
@@ -99,6 +122,11 @@ async function generateQuiz(chapterId, userId, options = {}) {
       difficulty,
       questionCount
     );
+    
+    // Validate that we got questions
+    if (!Array.isArray(questions) || questions.length === 0) {
+      throw new Error('AI failed to generate quiz questions. Please try again.');
+    }
     
     // Create quiz title
     const title = `${chapter.title} - ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Quiz`;

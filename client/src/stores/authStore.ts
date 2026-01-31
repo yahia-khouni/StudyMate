@@ -6,12 +6,17 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isHydrated: boolean;
   
   // Actions
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
+  setHydrated: (hydrated: boolean) => void;
   logout: () => void;
 }
+
+// Timeout for hydration - fallback if hydration takes too long
+const HYDRATION_TIMEOUT = 3000;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -19,6 +24,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: true,
+      isHydrated: false,
       
       setUser: (user) => set({ 
         user, 
@@ -27,6 +33,8 @@ export const useAuthStore = create<AuthState>()(
       }),
       
       setLoading: (isLoading) => set({ isLoading }),
+      
+      setHydrated: (isHydrated) => set({ isHydrated, isLoading: false }),
       
       logout: () => {
         localStorage.removeItem('accessToken');
@@ -44,11 +52,29 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        // After hydration from storage, set loading to false
+        // After hydration from storage, mark as hydrated
         if (state) {
           state.isLoading = false;
+          state.isHydrated = true;
         }
       },
     }
   )
 );
+
+// Set up hydration timeout fallback
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    const state = useAuthStore.getState();
+    if (!state.isHydrated) {
+      console.warn('Auth hydration timeout - setting default state');
+      state.setHydrated(true);
+    }
+  }, HYDRATION_TIMEOUT);
+  
+  // Listen for session expired events from API interceptor
+  window.addEventListener('auth:sessionExpired', () => {
+    const state = useAuthStore.getState();
+    state.logout();
+  });
+}

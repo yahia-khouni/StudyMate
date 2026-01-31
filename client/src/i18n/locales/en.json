@@ -30,7 +30,18 @@
     "optional": "Optional",
     "required": "Required",
     "more": "More",
-    "retry": "Retry"
+    "retry": "Retry",
+    "skipToContent": "Skip to main content",
+    "backOnline": "You're back online",
+    "offline": "You're offline. Some features may be unavailable."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "courses": "Courses",
+    "calendar": "Calendar",
+    "profile": "Profile",
+    "settings": "Settings",
+    "userMenu": "User menu"
   },
   "auth": {
     "login": "Log In",
@@ -188,6 +199,9 @@
     "markComplete": "Mark Complete",
     "markedComplete": "Chapter marked as complete!",
     "markCompleteError": "Failed to mark chapter as complete",
+    "reorderSuccess": "Chapters reordered successfully!",
+    "reorderError": "Failed to reorder chapters",
+    "dragToReorder": "Drag to reorder",
     "processedContent": "Processed Content",
     "status": {
       "draft": "Draft",

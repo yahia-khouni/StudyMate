@@ -568,8 +568,13 @@ Output format (JSON array):
     );
 
     let responseContent = response.data.choices[0]?.message?.content || '[]';
+    
+    logger.info(`Quiz AI response before cleaning - length: ${responseContent.length}`);
+    
     // Clean DeepSeek reasoning tokens
     responseContent = cleanDeepSeekResponse(responseContent);
+    
+    logger.info(`Quiz AI response after cleaning - length: ${responseContent.length}, content: ${responseContent.substring(0, 200)}`);
     
     // Extract JSON from response (handle markdown code blocks)
     let jsonString = responseContent;
@@ -578,7 +583,28 @@ Output format (JSON array):
       jsonString = jsonMatch[1].trim();
     }
     
-    const questions = JSON.parse(jsonString);
+    // Also try to extract JSON array directly if no code block found
+    if (!jsonMatch) {
+      const arrayMatch = responseContent.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (arrayMatch) {
+        jsonString = arrayMatch[0];
+      }
+    }
+    
+    let questions;
+    try {
+      questions = JSON.parse(jsonString);
+    } catch (parseError) {
+      logger.error('Failed to parse quiz JSON:', jsonString.substring(0, 500));
+      throw new Error('Failed to parse AI response as JSON');
+    }
+    
+    if (!Array.isArray(questions)) {
+      logger.error('Quiz response is not an array:', typeof questions);
+      throw new Error('AI response is not an array of questions');
+    }
+    
+    logger.info(`Parsed ${questions.length} questions from AI response`);
     
     // Validate and sanitize questions
     return questions.map((q, index) => ({

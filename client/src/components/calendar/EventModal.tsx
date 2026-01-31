@@ -32,6 +32,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import calendarService, { CalendarEvent, CreateEventData } from '@/services/calendar.service';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 const eventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -59,6 +60,7 @@ export function EventModal({ open, onClose, event, defaultDate, onSaved }: Event
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isEditing = !!event;
 
@@ -168,14 +170,18 @@ export function EventModal({ open, onClose, event, defaultDate, onSaved }: Event
   };
 
   const handleDelete = async () => {
-    if (!event || !confirm(t('calendar.deleteConfirm', 'Are you sure you want to delete this event?'))) {
-      return;
-    }
+    if (!event) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!event) return;
 
     try {
       setDeleting(true);
       await calendarService.deleteEvent(event.id);
       toast.success(t('calendar.eventDeleted', 'Event deleted'));
+      setShowDeleteConfirm(false);
       onSaved();
     } catch (error) {
       console.error('Failed to delete event:', error);
@@ -379,6 +385,17 @@ export function EventModal({ open, onClose, event, defaultDate, onSaved }: Event
           </div>
         </form>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={t('calendar.deleteEvent', 'Delete Event')}
+        description={t('calendar.deleteConfirm', 'Are you sure you want to delete this event?')}
+        confirmText={t('common.delete')}
+        onConfirm={confirmDelete}
+        variant="danger"
+        loading={deleting}
+      />
     </Dialog>
   );
 }

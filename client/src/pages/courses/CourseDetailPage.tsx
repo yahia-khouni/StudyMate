@@ -1,17 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Plus,
-  Edit,
-  Trash2,
-  GripVertical,
   FileText,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  Loader2,
   MessageSquare,
   X,
 } from 'lucide-react';
@@ -21,6 +14,7 @@ import {
   getChapters,
   deleteChapter,
   markChapterComplete,
+  reorderChapters,
   type Chapter,
 } from '@/services';
 import { Button } from '@/components/ui/button';
@@ -29,7 +23,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { CreateChapterDialog } from '@/components/courses/CreateChapterDialog';
 import { EditChapterDialog } from '@/components/courses/EditChapterDialog';
+import { SortableChapterList } from '@/components/courses/SortableChapterList';
 import { ChatInterface } from '@/components/learning';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 export function CourseDetailPage() {
   const { t } = useTranslation();
@@ -39,6 +35,7 @@ export function CourseDetailPage() {
   const [isCreateChapterOpen, setIsCreateChapterOpen] = useState(false);
   const [editChapter, setEditChapter] = useState<Chapter | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [deleteChapterConfirm, setDeleteChapterConfirm] = useState<string | null>(null);
 
   // courseId is already a string (UUID)
   const courseIdStr = courseId || '';
@@ -69,6 +66,7 @@ export function CourseDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['chapters', courseIdStr] });
       queryClient.invalidateQueries({ queryKey: ['course', courseIdStr] });
       toast.success(t('chapters.deleteSuccess'));
+      setDeleteChapterConfirm(null);
     },
     onError: () => {
       toast.error(t('chapters.deleteError'));
@@ -87,10 +85,29 @@ export function CourseDetailPage() {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: (chapterIds: string[]) => reorderChapters(courseIdStr, chapterIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chapters', courseIdStr] });
+      toast.success(t('chapters.reorderSuccess'));
+    },
+    onError: () => {
+      toast.error(t('chapters.reorderError'));
+    },
+  });
+
   const handleDeleteChapter = (chapterId: string) => {
-    if (confirm(t('chapters.confirmDelete'))) {
-      deleteChapterMutation.mutate(chapterId);
+    setDeleteChapterConfirm(chapterId);
+  };
+
+  const confirmDeleteChapter = () => {
+    if (deleteChapterConfirm) {
+      deleteChapterMutation.mutate(deleteChapterConfirm);
     }
+  };
+
+  const handleReorder = (chapterIds: string[]) => {
+    reorderMutation.mutate(chapterIds);
   };
 
   const isLoading = courseLoading || chaptersLoading;
@@ -195,19 +212,14 @@ export function CourseDetailPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {chapters.map((chapter, index) => (
-            <ChapterCard
-              key={chapter.id}
-              chapter={chapter}
-              courseId={courseIdStr}
-              index={index}
-              onEdit={() => setEditChapter(chapter)}
-              onDelete={() => handleDeleteChapter(chapter.id)}
-              onMarkComplete={() => markCompleteMutation.mutate(chapter.id)}
-            />
-          ))}
-        </div>
+        <SortableChapterList
+          chapters={chapters}
+          courseId={courseIdStr}
+          onReorder={handleReorder}
+          onEdit={(chapter) => setEditChapter(chapter)}
+          onDelete={handleDeleteChapter}
+          onMarkComplete={(chapterId) => markCompleteMutation.mutate(chapterId)}
+        />
       )}
 
       <CreateChapterDialog
@@ -255,79 +267,18 @@ export function CourseDetailPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteChapterConfirm}
+        onOpenChange={(open) => !open && setDeleteChapterConfirm(null)}
+        title={t('common.delete')}
+        description={t('chapters.confirmDelete')}
+        confirmText={t('common.delete')}
+        onConfirm={confirmDeleteChapter}
+        variant="danger"
+        loading={deleteChapterMutation.isPending}
+      />
     </div>
-  );
-}
-
-interface ChapterCardProps {
-  chapter: Chapter;
-  courseId: string;
-  index: number;
-  onEdit: () => void;
-  onDelete: () => void;
-  onMarkComplete: () => void;
-}
-
-function ChapterCard({ chapter, courseId, index, onEdit, onDelete, onMarkComplete }: ChapterCardProps) {
-  const { t } = useTranslation();
-
-  const statusConfig = {
-    draft: { icon: Clock, color: 'text-yellow-500', label: t('chapters.status.draft') },
-    processing: { icon: Loader2, color: 'text-blue-500', label: t('chapters.status.processing') },
-    ready: { icon: AlertCircle, color: 'text-green-500', label: t('chapters.status.ready') },
-    completed: { icon: CheckCircle, color: 'text-green-600', label: t('chapters.status.completed') },
-  };
-
-  const status = statusConfig[chapter.status];
-  const StatusIcon = status.icon;
-
-  return (
-    <Card className="group">
-      <CardContent className="flex items-center gap-4 py-4">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <GripVertical className="h-5 w-5 cursor-grab" />
-          <span className="font-medium w-8 text-center">{index + 1}</span>
-        </div>
-
-        <Link
-          to={`/courses/${courseId}/chapters/${chapter.id}`}
-          className="flex-1 min-w-0"
-        >
-          <div className="font-medium hover:text-primary transition-colors">
-            {chapter.title}
-          </div>
-          {chapter.description && (
-            <p className="text-sm text-muted-foreground truncate">{chapter.description}</p>
-          )}
-        </Link>
-
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="flex items-center gap-1">
-            <StatusIcon className={`h-3 w-3 ${status.color} ${chapter.status === 'processing' ? 'animate-spin' : ''}`} />
-            {status.label}
-          </Badge>
-
-          {chapter.status === 'ready' && (
-            <Button variant="outline" size="sm" onClick={onMarkComplete}>
-              <CheckCircle className="mr-1 h-3 w-3" />
-              {t('chapters.markComplete')}
-            </Button>
-          )}
-
-          <Button variant="ghost" size="icon" onClick={onEdit}>
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onDelete}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 

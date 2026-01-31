@@ -37,6 +37,7 @@ import {
 } from '@/services/learning.service';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface ChatInterfaceProps {
   courseId: string;
@@ -57,6 +58,8 @@ export function ChatInterface({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -181,21 +184,26 @@ export function ChatInterface({
 
   async function handleDeleteSession(sessionId: string, e: React.MouseEvent) {
     e.stopPropagation();
-    
-    if (!confirm(t('learning.chat.confirmDelete', 'Are you sure you want to delete this chat?'))) {
-      return;
-    }
+    setDeleteConfirm(sessionId);
+  }
 
+  async function confirmDeleteSession() {
+    if (!deleteConfirm) return;
+    
+    setIsDeleting(true);
     try {
-      await deleteChatSession(sessionId);
-      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      await deleteChatSession(deleteConfirm);
+      setSessions((prev) => prev.filter((s) => s.id !== deleteConfirm));
       
-      if (activeSession?.id === sessionId) {
+      if (activeSession?.id === deleteConfirm) {
         setActiveSession(null);
         setMessages([]);
       }
+      setDeleteConfirm(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete chat');
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -336,6 +344,17 @@ export function ChatInterface({
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+        title={t('learning.chat.deleteChat', 'Delete Chat')}
+        description={t('learning.chat.confirmDelete', 'Are you sure you want to delete this chat?')}
+        confirmText={t('common.delete')}
+        onConfirm={confirmDeleteSession}
+        variant="danger"
+        loading={isDeleting}
+      />
     </Card>
   );
 }

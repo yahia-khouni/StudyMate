@@ -18,12 +18,13 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Play, CheckCircle, XCircle, Trophy, Clock, Sparkles, ChevronRight, RotateCcw } from 'lucide-react';
+import { Loader2, Play, CheckCircle, XCircle, Trophy, Clock, Sparkles, ChevronRight, RotateCcw, Trash2 } from 'lucide-react';
 import {
   getChapterQuizzes,
   generateQuiz,
   getQuiz,
   submitQuizAttempt,
+  deleteQuiz,
   type Quiz,
   type QuizAttempt,
   type GenerateQuizOptions,
@@ -55,6 +56,7 @@ export function QuizInterface({
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const startTimeRef = useRef<number>(0);
 
@@ -166,6 +168,23 @@ export function QuizInterface({
     setAttempt(null);
     setQuizState('list');
     loadQuizzes();
+  }
+
+  async function handleDeleteQuiz(quizId: string) {
+    if (!confirm(t('learning.quiz.deleteConfirm', 'Are you sure you want to delete this quiz? This cannot be undone.'))) {
+      return;
+    }
+    
+    setDeleting(quizId);
+    setError(null);
+    try {
+      await deleteQuiz(quizId);
+      setQuizzes(quizzes.filter(q => q.id !== quizId));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete quiz');
+    } finally {
+      setDeleting(null);
+    }
   }
 
   if (!hasProcessedContent) {
@@ -291,10 +310,25 @@ export function QuizInterface({
                       </span>
                     </div>
                   </div>
-                  <Button onClick={() => startQuiz(quiz.id)}>
-                    <Play className="mr-2 h-4 w-4" />
-                    {t('learning.quiz.start', 'Start')}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={() => startQuiz(quiz.id)}>
+                      <Play className="mr-2 h-4 w-4" />
+                      {t('learning.quiz.start', 'Start')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteQuiz(quiz.id)}
+                      disabled={deleting === quiz.id}
+                    >
+                      {deleting === quiz.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -305,8 +339,23 @@ export function QuizInterface({
   }
 
   // Taking Quiz View
-  if (quizState === 'taking' && activeQuiz?.questions) {
+  if (quizState === 'taking' && activeQuiz?.questions && activeQuiz.questions.length > 0) {
     const question = activeQuiz.questions[currentQuestion];
+    
+    // Guard against undefined question
+    if (!question) {
+      return (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="text-destructive">{t('learning.quiz.questionError', 'Error loading question')}</p>
+            <Button variant="outline" className="mt-4" onClick={resetQuiz}>
+              {t('common.back', 'Back')}
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
+    
     const progress = ((currentQuestion + 1) / activeQuiz.questions.length) * 100;
 
     return (
@@ -335,7 +384,7 @@ export function QuizInterface({
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-4">{question.questionText}</h3>
             <div className="space-y-3">
-              {question.options.map((option, index) => (
+              {(question.options || []).map((option, index) => (
                 <button
                   key={index}
                   onClick={() => selectAnswer(index)}
@@ -431,12 +480,17 @@ export function QuizInterface({
           <h4 className="font-medium mb-4">{t('learning.quiz.review', 'Review Answers')}</h4>
           <div className="space-y-4">
             {activeQuiz.questions.map((question, index) => {
+              if (!question) return null;
+              
               const result = attempt.questionResults?.[index];
               const isCorrect = result?.isCorrect;
+              const userAnswerIndex = result?.userAnswer ?? 0;
+              const userAnswer = question.options?.[userAnswerIndex] ?? t('learning.quiz.noAnswer', 'No answer');
+              const correctAnswer = question.options?.[question.correctAnswerIndex] ?? '';
 
               return (
                 <div
-                  key={question.id}
+                  key={question.id || index}
                   className={cn(
                     'p-4 border rounded-lg',
                     isCorrect ? 'border-green-500/50 bg-green-500/10' : 'border-red-500/50 bg-red-500/10'
@@ -454,20 +508,22 @@ export function QuizInterface({
                         <p>
                           <span className="text-muted-foreground">{t('learning.quiz.yourAnswer', 'Your answer')}:</span>{' '}
                           <span className={isCorrect ? 'text-green-600' : 'text-red-600'}>
-                            {question.options[result?.userAnswer ?? 0]}
+                            {userAnswer}
                           </span>
                         </p>
                         {!isCorrect && (
                           <p>
                             <span className="text-muted-foreground">{t('learning.quiz.correctAnswer', 'Correct answer')}:</span>{' '}
                             <span className="text-green-600">
-                              {question.options[question.correctAnswerIndex]}
+                              {correctAnswer}
                             </span>
                           </p>
                         )}
-                        <p className="mt-2 text-muted-foreground italic">
-                          {question.explanation}
-                        </p>
+                        {question.explanation && (
+                          <p className="mt-2 text-muted-foreground italic">
+                            {question.explanation}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

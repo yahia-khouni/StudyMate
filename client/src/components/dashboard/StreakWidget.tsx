@@ -59,7 +59,11 @@ export function StreakWidget({ className, showHistory = false, compact = false }
 
   if (compact) {
     return (
-      <div className={cn('flex items-center gap-2', className)}>
+      <div 
+        className={cn('flex items-center gap-2', className)}
+        role="status"
+        aria-label={t('streak.currentStreak', 'Current streak: {{count}} days', { count: streak.currentStreak })}
+      >
         <div className={cn(
           'relative',
           streak.currentStreak > 0 && hasActivityToday && 'animate-pulse'
@@ -70,10 +74,11 @@ export function StreakWidget({ className, showHistory = false, compact = false }
               streak.currentStreak > 0 
                 ? 'text-orange-500 fill-orange-500' 
                 : 'text-muted-foreground'
-            )} 
+            )}
+            aria-hidden="true"
           />
           {streak.currentStreak > 0 && hasActivityToday && (
-            <span className="absolute -inset-1 rounded-full bg-orange-500/20 animate-ping" />
+            <span className="absolute -inset-1 rounded-full bg-orange-500/20 animate-ping" aria-hidden="true" />
           )}
         </div>
         <span className="font-bold text-lg">

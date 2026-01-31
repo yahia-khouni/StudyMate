@@ -1,10 +1,13 @@
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import { Toaster } from '@/components/ui/sonner';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { getCurrentUser } from '@/services/auth.service';
+import { getErrorMessage } from '@/services/api';
 
 // Lazy load pages for better performance
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
@@ -13,6 +16,7 @@ const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const VerifyEmailPage = lazy(() => import('@/pages/auth/VerifyEmailPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
+const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
 
 // Course pages
 const CoursesListPage = lazy(() => import('@/pages/courses/CoursesListPage'));
@@ -21,6 +25,13 @@ const ChapterViewPage = lazy(() => import('@/pages/courses/ChapterViewPage'));
 
 // Calendar page
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
+
+// Dashboard page
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+
+// Profile & Settings pages
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 
 // Layout
 const MainLayout = lazy(() => import('@/components/MainLayout'));
@@ -58,7 +69,7 @@ function AuthRoute() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/courses" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;
@@ -66,7 +77,7 @@ function AuthRoute() {
 
 // Auth initialization hook
 function useAuthInit() {
-  const { setUser, setLoading, isAuthenticated, user } = useAuthStore();
+  const { setUser, setLoading, isAuthenticated, isHydrated, user } = useAuthStore();
   const { connect, disconnect } = useNotificationStore();
 
   useEffect(() => {
@@ -81,12 +92,26 @@ function useAuthInit() {
       try {
         const response = await getCurrentUser();
         setUser(response.user);
-      } catch {
-        // Token is invalid, clear it
+      } catch (error) {
+        // Token is invalid, clear it and notify user
         localStorage.removeItem('accessToken');
         setUser(null);
+        
+        // Only show toast if we had a stored session (user was previously logged in)
+        const errorMsg = getErrorMessage(error);
+        if (errorMsg.includes('network') || errorMsg.includes('Network')) {
+          toast.error('Unable to restore session. Please check your connection.');
+        } else {
+          // Session expired - show info toast
+          toast.info('Your session has expired. Please log in again.');
+        }
       }
     };
+
+    // Wait for hydration before checking auth
+    if (!isHydrated) {
+      return;
+    }
 
     // Only init if we haven't already loaded the user
     if (!isAuthenticated) {
@@ -94,7 +119,7 @@ function useAuthInit() {
     } else {
       setLoading(false);
     }
-  }, [setUser, setLoading, isAuthenticated]);
+  }, [setUser, setLoading, isAuthenticated, isHydrated]);
 
   // Connect WebSocket when authenticated
   useEffect(() => {
@@ -114,10 +139,10 @@ function App() {
   // Initialize auth state on app load
   useAuthInit();
   return (
-    <>
+    <ErrorBoundary>
       <RouterProvider router={router} />
       <Toaster position="top-right" />
-    </>
+    </ErrorBoundary>
   );
 }
 
@@ -138,6 +163,7 @@ const router = createBrowserRouter(
       ],
     },
     { path: '/verify-email', element: <Suspense fallback={<PageLoader />}><VerifyEmailPage /></Suspense> },
+    { path: '/auth/callback', element: <Suspense fallback={<PageLoader />}><AuthCallbackPage /></Suspense> },
 
     // Protected routes
     {
@@ -146,10 +172,15 @@ const router = createBrowserRouter(
         {
           element: <Suspense fallback={<PageLoader />}><MainLayout /></Suspense>,
           children: [
+            { path: '/dashboard', element: <Suspense fallback={<PageLoader />}><DashboardPage /></Suspense> },
             { path: '/courses', element: <Suspense fallback={<PageLoader />}><CoursesListPage /></Suspense> },
             { path: '/courses/:courseId', element: <Suspense fallback={<PageLoader />}><CourseDetailPage /></Suspense> },
             { path: '/courses/:courseId/chapters/:chapterId', element: <Suspense fallback={<PageLoader />}><ChapterViewPage /></Suspense> },
             { path: '/calendar', element: <Suspense fallback={<PageLoader />}><CalendarPage /></Suspense> },
+            { path: '/profile', element: <Suspense fallback={<PageLoader />}><ProfilePage /></Suspense> },
+            { path: '/settings', element: <Suspense fallback={<PageLoader />}><SettingsPage /></Suspense> },
+            // Redirect /courses to /dashboard as default authenticated route
+            { index: true, element: <Navigate to="/dashboard" replace /> },
           ],
         },
       ],

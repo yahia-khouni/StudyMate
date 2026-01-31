@@ -78,9 +78,10 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        // Clear tokens and redirect to login
+        // Clear tokens - let the auth store/routes handle redirect
         localStorage.removeItem('accessToken');
-        window.location.href = '/login';
+        // Dispatch custom event for auth state to listen to
+        window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -98,10 +99,43 @@ export interface ApiError {
   status: number;
 }
 
-// Helper to extract error message
+// Helper to extract error message with network error detection
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || error.message || 'An error occurred';
+    // Network errors (no response received)
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED') {
+        return 'Request timeout. Please try again.';
+      }
+      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        return 'Network error. Please check your internet connection.';
+      }
+      return 'Unable to connect to server. Please try again later.';
+    }
+    
+    // Server responded with error
+    const status = error.response.status;
+    const data = error.response.data as { message?: string; error?: string };
+    const message = data?.message || data?.error;
+    
+    // Handle common HTTP status codes
+    if (status === 401) {
+      return message || 'Invalid credentials. Please check your email and password.';
+    }
+    if (status === 403) {
+      return message || 'You do not have permission to perform this action.';
+    }
+    if (status === 404) {
+      return message || 'The requested resource was not found.';
+    }
+    if (status === 422) {
+      return message || 'Invalid data provided.';
+    }
+    if (status >= 500) {
+      return 'Server error. Please try again later.';
+    }
+    
+    return message || error.message || 'An error occurred';
   }
   if (error instanceof Error) {
     return error.message;
