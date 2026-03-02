@@ -1,7 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Upload } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sidebar } from '@/components/Sidebar';
@@ -73,14 +72,6 @@ export function MainLayout() {
             {/* Right Side Actions */}
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
-              
-              {/* Upload Button */}
-              <Link to="/courses">
-                <Button className="gap-2 bg-primary hover:bg-primary/90">
-                  <Upload className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('common.uploadMaterial', 'Upload Material')}</span>
-                </Button>
-              </Link>
 
               {/* Notifications */}
               <NotificationDropdown />

@@ -6,8 +6,7 @@ import {
   Calendar, 
   Sparkles,
   Settings,
-  LogOut,
-  Crown
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -111,16 +110,6 @@ export function Sidebar() {
             </p>
           </div>
         </div>
-
-        {/* Upgrade Button */}
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full justify-center gap-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300"
-        >
-          <Crown className="h-4 w-4" />
-          {t('user.upgradePlan', 'Upgrade Plan')}
-        </Button>
 
         {/* Logout */}
         <Button

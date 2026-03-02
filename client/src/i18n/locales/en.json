@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "StudyAI",
+    "appName": "StudyMate",
     "loading": "Loading...",
     "error": "An error occurred",
     "save": "Save",
@@ -34,6 +34,74 @@
     "skipToContent": "Skip to main content",
     "backOnline": "You're back online",
     "offline": "You're offline. Some features may be unavailable."
+  },
+  "landing": {
+    "hero": {
+      "badge": "AI-Powered Study Platform",
+      "titleLine1": "Study Smarter,",
+      "titleLine2": "Not Harder",
+      "description": "Transform your learning with AI-generated summaries, quizzes, and flashcards. Upload your materials and let AI do the heavy lifting.",
+      "cta": {
+        "primary": "Start Learning Free",
+        "secondary": "Sign In"
+      },
+      "trust": {
+        "free": "Free to start",
+        "noCard": "No credit card required",
+        "students": "Join 1000+ students"
+      }
+    },
+    "features": {
+      "title": "Everything You Need to Excel",
+      "subtitle": "Powerful AI tools designed for university students in tech and science fields.",
+      "aiLearning": {
+        "title": "AI-Powered Learning",
+        "description": "Generate summaries, quizzes, and flashcards automatically from your materials."
+      },
+      "courseManagement": {
+        "title": "Course Management",
+        "description": "Organize your courses, chapters, and materials in one place."
+      },
+      "smartChatbot": {
+        "title": "Smart AI Chatbot",
+        "description": "Ask questions and get answers based on your uploaded content."
+      },
+      "studyCalendar": {
+        "title": "Study Calendar",
+        "description": "Plan your study sessions and track deadlines automatically."
+      },
+      "streakTracking": {
+        "title": "Streak Tracking",
+        "description": "Stay motivated with daily streaks and progress tracking."
+      },
+      "bilingual": {
+        "title": "Bilingual Support",
+        "description": "Full English and French support for UI and AI content."
+      }
+    },
+    "benefits": {
+      "title": "Why Students Love StudyMate",
+      "description": "Join thousands of students who have transformed their study habits with our AI-powered platform.",
+      "saveTime": "Save hours on creating study materials",
+      "retention": "Improve retention with spaced repetition",
+      "organized": "Stay organized with smart course management",
+      "progress": "Track your progress with detailed analytics"
+    },
+    "demo": {
+      "title": "AI Study Assistant",
+      "subtitle": "Always ready to help",
+      "example1": "Uploaded: \"Machine Learning Fundamentals.pdf\"",
+      "example2": "Generated: 25 flashcards, 10 quiz questions, comprehensive summary",
+      "example3": "Quiz score: 85% - Great progress!"
+    },
+    "cta": {
+      "title": "Ready to Transform Your Study Routine?",
+      "description": "Join students who are already studying smarter with AI-powered tools. Start for free today.",
+      "button": "Get Started Now"
+    },
+    "footer": {
+      "rights": "Built with ❤️ for students."
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -441,15 +509,35 @@
   },
   "profile": {
     "title": "Profile",
+    "subtitle": "Manage your account information",
+    "avatar": "Profile Picture",
+    "changeAvatar": "Change avatar",
+    "uploadPhoto": "Upload Photo",
     "personalInfo": "Personal Information",
+    "personalInfoDesc": "Update your personal details",
+    "accountInfo": "Account Information",
+    "accountStatus": "Status",
+    "active": "Active",
+    "memberSince": "Member since",
+    "emailNote": "Email cannot be changed after registration",
     "preferences": "Preferences",
     "language": "Language",
     "languagePreference": "Preferred Language",
     "timezone": "Timezone",
     "changePassword": "Change Password",
     "currentPassword": "Current Password",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDesc": "Irreversible and destructive actions",
     "deleteAccount": "Delete Account",
+    "deleteAccountDesc": "Permanently remove your account and all associated data",
     "deleteAccountWarning": "This will permanently delete your account and all data.",
+    "deleteWarning": "This action cannot be undone. All your data will be permanently deleted.",
+    "confirmDeleteTitle": "Are you sure?",
+    "confirmPassword": "Enter your password to confirm",
+    "confirmDelete": "Yes, delete my account",
+    "enterPassword": "Please enter your password",
+    "updateSuccess": "Profile updated successfully",
+    "deleteSuccess": "Account deleted",
     "accountCreated": "Account created",
     "emailStatus": "Email Status",
     "verified": "Verified",

@@ -272,6 +272,85 @@ export function ChapterViewPage() {
           {activeView === 'content' && (
             displayContent ? (
               <MarkdownContent content={displayContent} />
+            ) : materials.length > 0 ? (
+              /* Show pending materials that need processing */
+              <div className="rounded-2xl bg-card border border-border p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-amber-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {t('chapter.materialsUploaded', 'Materials Uploaded')}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {t('chapter.processToExtract', 'Process your files to extract and display content')}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {materials.map((material) => (
+                    <div 
+                      key={material.id}
+                      className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center",
+                          material.status === 'completed' ? "bg-green-500/20" :
+                          material.status === 'processing' ? "bg-blue-500/20" :
+                          material.status === 'failed' ? "bg-red-500/20" :
+                          "bg-amber-500/20"
+                        )}>
+                          <FileText className={cn(
+                            "h-5 w-5",
+                            material.status === 'completed' ? "text-green-500" :
+                            material.status === 'processing' ? "text-blue-500" :
+                            material.status === 'failed' ? "text-red-500" :
+                            "text-amber-500"
+                          )} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground text-sm">
+                            {material.originalFilename}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {material.status === 'completed' ? t('materials.processed', 'Processed') :
+                             material.status === 'processing' ? t('materials.processing', 'Processing...') :
+                             material.status === 'failed' ? t('materials.failed', 'Failed') :
+                             t('materials.pending', 'Pending')}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {material.status === 'pending' && (
+                        <Button 
+                          size="sm"
+                          onClick={() => handleStartProcessing(material)}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          {t('materials.process', 'Process')}
+                        </Button>
+                      )}
+                      {material.status === 'processing' && (
+                        <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                      )}
+                      {material.status === 'failed' && (
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStartProcessing(material)}
+                          className="text-red-500 border-red-500/50 hover:bg-red-500/10"
+                        >
+                          {t('common.retry', 'Retry')}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="rounded-2xl bg-card border border-border p-12 text-center">
                 <Cloud className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -371,14 +450,14 @@ export function ChapterViewPage() {
                 disabled={!hasProcessedContent}
                 className={cn(
                   "w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all",
-                  activeView === 'summary' && "ring-2 ring-primary",
+                  activeView === 'summary' && "ring-2 ring-blue-500",
                   hasProcessedContent 
-                    ? "bg-muted/30 hover:bg-muted/50 cursor-pointer" 
+                    ? "bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer" 
                     : "opacity-50 cursor-not-allowed"
                 )}
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
-                  <Plus className="h-5 w-5 text-primary" />
+                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+                  <Plus className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
                   <p className="font-medium text-foreground text-sm">
@@ -406,14 +485,9 @@ export function ChapterViewPage() {
                   <Brain className="h-5 w-5 text-emerald-500" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-foreground text-sm">
-                      {t('chapter.startQuiz', 'Start Quiz')}
-                    </p>
-                    <Badge className="bg-emerald-500 text-white text-[10px] px-1.5 py-0">
-                      {t('chapter.new', 'NEW')}
-                    </Badge>
-                  </div>
+                  <p className="font-medium text-foreground text-sm">
+                    {t('chapter.startQuiz', 'Start Quiz')}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {t('chapter.quizDesc', 'Test your knowledge with {{count}} AI-generated questions.', { 
                       count: chapterProgress?.quizzes?.totalQuizzes || 10 
@@ -430,7 +504,7 @@ export function ChapterViewPage() {
                   "w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all",
                   activeView === 'flashcards' && "ring-2 ring-amber-500",
                   hasProcessedContent 
-                    ? "bg-muted/30 hover:bg-muted/50 cursor-pointer" 
+                    ? "bg-amber-500/10 hover:bg-amber-500/20 cursor-pointer" 
                     : "opacity-50 cursor-not-allowed"
                 )}
               >

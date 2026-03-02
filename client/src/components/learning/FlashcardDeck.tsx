@@ -372,41 +372,63 @@ export function FlashcardDeck({
             </div>
           ) : currentCard ? (
             <>
-              {/* Flashcard */}
-              <div
-                onClick={flipCard}
-                className={cn(
-                  'relative h-64 cursor-pointer perspective-1000',
-                  'transition-all duration-500',
-                )}
-              >
+              {/* Flashcard Container - Simple flip with conditional rendering */}
+              <div className="flex justify-center mb-6">
                 <div
-                  className={cn(
-                    'absolute inset-0 border-2 rounded-xl p-6 flex items-center justify-center text-center',
-                    'transition-transform duration-500 transform-style-preserve-3d backface-hidden',
-                    isFlipped ? 'rotate-y-180' : '',
-                    !isFlipped ? 'bg-primary/5 border-primary' : 'bg-muted'
-                  )}
+                  onClick={flipCard}
+                  className="relative w-full max-w-lg h-72 cursor-pointer"
                 >
-                  <div className="text-lg">
-                    {currentCard.frontContent}
-                  </div>
-                </div>
-                <div
-                  className={cn(
-                    'absolute inset-0 border-2 rounded-xl p-6 flex items-center justify-center text-center',
-                    'transition-transform duration-500 transform-style-preserve-3d backface-hidden',
-                    isFlipped ? '' : '-rotate-y-180',
-                    isFlipped ? 'bg-green-500/10 border-green-500' : 'bg-muted'
+                  {/* Question Side (Front) */}
+                  {!isFlipped && (
+                    <div
+                      className={cn(
+                        "absolute inset-0 rounded-2xl p-8 flex flex-col items-center justify-center",
+                        "bg-gradient-to-br from-primary/10 via-primary/5 to-background",
+                        "border-2 border-primary/30 shadow-lg",
+                        "animate-in fade-in zoom-in-95 duration-200"
+                      )}
+                    >
+                      <div className="absolute top-4 left-4">
+                        <Badge variant="outline" className="text-xs text-primary border-primary/30">
+                          {t('learning.flashcards.question', 'Question')}
+                        </Badge>
+                      </div>
+                      <div className="text-xl font-medium text-center text-foreground leading-relaxed px-4">
+                        {currentCard.frontContent}
+                      </div>
+                      <div className="absolute bottom-4 text-xs text-muted-foreground">
+                        {t('learning.flashcards.tapToFlip', 'Tap to reveal answer')}
+                      </div>
+                    </div>
                   )}
-                >
-                  <div className="text-lg">
-                    {currentCard.backContent}
-                  </div>
+
+                  {/* Answer Side (Back) */}
+                  {isFlipped && (
+                    <div
+                      className={cn(
+                        "absolute inset-0 rounded-2xl p-8 flex flex-col items-center justify-center",
+                        "bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-background",
+                        "border-2 border-emerald-500/30 shadow-lg",
+                        "animate-in fade-in zoom-in-95 duration-200"
+                      )}
+                    >
+                      <div className="absolute top-4 left-4">
+                        <Badge variant="outline" className="text-xs text-emerald-500 border-emerald-500/30">
+                          {t('learning.flashcards.answer', 'Answer')}
+                        </Badge>
+                      </div>
+                      <div className="text-xl font-medium text-center text-foreground leading-relaxed px-4">
+                        {currentCard.backContent}
+                      </div>
+                      <div className="absolute bottom-4 text-xs text-muted-foreground">
+                        {t('learning.flashcards.tapToFlipBack', 'Tap to see question')}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <p className="text-center text-sm text-muted-foreground mt-4">
+              <p className="text-center text-sm text-muted-foreground mb-4">
                 {isFlipped
                   ? t('learning.flashcards.ratePrompt', 'How well did you know this?')
                   : t('learning.flashcards.flipPrompt', 'Click card or press Space to flip')}
@@ -414,7 +436,7 @@ export function FlashcardDeck({
 
               {/* Rating Buttons */}
               {isFlipped && (
-                <div className="flex justify-center gap-2 mt-4">
+                <div className="flex justify-center gap-2 flex-wrap">
                   {QUALITY_RATINGS.map((rating) => (
                     <Button
                       key={rating.value}
@@ -422,10 +444,14 @@ export function FlashcardDeck({
                       size="sm"
                       onClick={() => handleRating(rating.value)}
                       disabled={recording}
-                      className={cn('flex-col h-auto py-2 px-3', rating.color, 'hover:opacity-80 text-white border-0')}
+                      className={cn(
+                        'flex-col h-auto py-2 px-4 min-w-[60px]',
+                        rating.color, 
+                        'hover:opacity-80 text-white border-0'
+                      )}
                     >
-                      <span className="text-xs font-bold">{rating.value}</span>
-                      <span className="text-xs">{rating.label}</span>
+                      <span className="text-sm font-bold">{rating.value}</span>
+                      <span className="text-[10px]">{rating.label}</span>
                     </Button>
                   ))}
                 </div>

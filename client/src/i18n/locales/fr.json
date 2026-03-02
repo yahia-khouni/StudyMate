@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "StudyAI",
+    "appName": "StudyMate",
     "loading": "Chargement...",
     "error": "Une erreur s'est produite",
     "save": "Enregistrer",
@@ -34,6 +34,74 @@
     "skipToContent": "Aller au contenu principal",
     "backOnline": "Vous êtes de nouveau en ligne",
     "offline": "Vous êtes hors ligne. Certaines fonctionnalités peuvent être indisponibles."
+  },
+  "landing": {
+    "hero": {
+      "badge": "Plateforme d'étude propulsée par l'IA",
+      "titleLine1": "Étudiez plus intelligemment,",
+      "titleLine2": "Pas plus dur",
+      "description": "Transformez votre apprentissage avec des résumés, quiz et cartes mémoire générés par l'IA. Téléversez vos documents et laissez l'IA faire le travail.",
+      "cta": {
+        "primary": "Commencer gratuitement",
+        "secondary": "Se connecter"
+      },
+      "trust": {
+        "free": "Gratuit pour commencer",
+        "noCard": "Aucune carte de crédit requise",
+        "students": "Rejoignez 1000+ étudiants"
+      }
+    },
+    "features": {
+      "title": "Tout ce dont vous avez besoin pour exceller",
+      "subtitle": "Des outils IA puissants conçus pour les étudiants universitaires en technologie et sciences.",
+      "aiLearning": {
+        "title": "Apprentissage propulsé par l'IA",
+        "description": "Générez automatiquement des résumés, quiz et cartes mémoire à partir de vos documents."
+      },
+      "courseManagement": {
+        "title": "Gestion des cours",
+        "description": "Organisez vos cours, chapitres et documents en un seul endroit."
+      },
+      "smartChatbot": {
+        "title": "Chatbot IA intelligent",
+        "description": "Posez des questions et obtenez des réponses basées sur votre contenu téléversé."
+      },
+      "studyCalendar": {
+        "title": "Calendrier d'étude",
+        "description": "Planifiez vos sessions d'étude et suivez automatiquement vos échéances."
+      },
+      "streakTracking": {
+        "title": "Suivi des séries",
+        "description": "Restez motivé avec des séries quotidiennes et le suivi de progression."
+      },
+      "bilingual": {
+        "title": "Support bilingue",
+        "description": "Support complet en anglais et français pour l'interface et le contenu IA."
+      }
+    },
+    "benefits": {
+      "title": "Pourquoi les étudiants adorent StudyMate",
+      "description": "Rejoignez des milliers d'étudiants qui ont transformé leurs habitudes d'étude avec notre plateforme propulsée par l'IA.",
+      "saveTime": "Économisez des heures sur la création de matériel d'étude",
+      "retention": "Améliorez la rétention avec la répétition espacée",
+      "organized": "Restez organisé avec une gestion intelligente des cours",
+      "progress": "Suivez votre progression avec des analyses détaillées"
+    },
+    "demo": {
+      "title": "Assistant d'étude IA",
+      "subtitle": "Toujours prêt à aider",
+      "example1": "Téléversé : \"Fondamentaux de l'apprentissage automatique.pdf\"",
+      "example2": "Généré : 25 cartes mémoire, 10 questions de quiz, résumé complet",
+      "example3": "Score du quiz : 85% - Excellente progression !"
+    },
+    "cta": {
+      "title": "Prêt à transformer votre routine d'étude ?",
+      "description": "Rejoignez les étudiants qui étudient déjà plus intelligemment avec des outils propulsés par l'IA. Commencez gratuitement.",
+      "button": "Commencer maintenant"
+    },
+    "footer": {
+      "rights": "Créé avec ❤️ pour les étudiants."
+    }
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -479,7 +547,10 @@
     "personalInfo": "Informations personnelles",
     "personalInfoDesc": "Mettez à jour vos informations personnelles",
     "accountInfo": "Informations du compte",
+    "accountStatus": "Statut",
+    "active": "Actif",
     "memberSince": "Membre depuis",
+    "emailNote": "L'e-mail ne peut pas être modifié après l'inscription",
     "preferences": "Préférences",
     "language": "Langue",
     "languagePreference": "Langue préférée",
@@ -489,7 +560,10 @@
     "dangerZone": "Zone de danger",
     "dangerZoneDesc": "Actions irréversibles et destructrices",
     "deleteAccount": "Supprimer le compte",
+    "deleteAccountDesc": "Supprimer définitivement votre compte et toutes les données associées",
+    "deleteAccountWarning": "Cela supprimera définitivement votre compte et toutes vos données.",
     "deleteWarning": "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
+    "confirmDeleteTitle": "Êtes-vous sûr ?",
     "confirmPassword": "Entrez votre mot de passe pour confirmer",
     "confirmDelete": "Oui, supprimer mon compte",
     "enterPassword": "Veuillez entrer votre mot de passe",

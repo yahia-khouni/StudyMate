@@ -7,6 +7,18 @@ const db = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 
 /**
+ * Convert ISO datetime string to MySQL datetime format
+ * @param {string|Date} dateValue - ISO datetime string or Date object
+ * @returns {string|null} MySQL datetime string (YYYY-MM-DD HH:MM:SS)
+ */
+function toMySQLDatetime(dateValue) {
+  if (!dateValue) return null;
+  const date = new Date(dateValue);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
  * Create a new calendar event
  * @param {Object} eventData - Event details
  * @returns {Promise<Object>} Created event
@@ -30,7 +42,7 @@ async function create(eventData) {
     `INSERT INTO calendar_events 
      (id, user_id, course_id, title, description, event_type, start_date, end_date, all_day, recurrence_rule, reminder_minutes)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, userId, courseId, title, description, eventType, startDate, endDate, allDay, recurrenceRule, reminderMinutes]
+    [id, userId, courseId, title, description, eventType, toMySQLDatetime(startDate), toMySQLDatetime(endDate), allDay, recurrenceRule, reminderMinutes]
   );
 
   return findById(id);
@@ -43,7 +55,7 @@ async function create(eventData) {
  */
 async function findById(id) {
   const [rows] = await db.query(
-    `SELECT ce.*, c.title as course_title
+    `SELECT ce.*, c.name as course_title
      FROM calendar_events ce
      LEFT JOIN courses c ON ce.course_id = c.id
      WHERE ce.id = ?`,
@@ -62,7 +74,7 @@ async function findByUser(userId, options = {}) {
   const { startDate, endDate, eventType, courseId } = options;
   
   let query = `
-    SELECT ce.*, c.title as course_title
+    SELECT ce.*, c.name as course_title
     FROM calendar_events ce
     LEFT JOIN courses c ON ce.course_id = c.id
     WHERE ce.user_id = ?
@@ -104,14 +116,14 @@ async function findByUser(userId, options = {}) {
  */
 async function findByDateRange(userId, startDate, endDate) {
   const [rows] = await db.query(
-    `SELECT ce.*, c.title as course_title
+    `SELECT ce.*, c.name as course_title
      FROM calendar_events ce
      LEFT JOIN courses c ON ce.course_id = c.id
      WHERE ce.user_id = ? 
        AND ce.start_date >= ? 
        AND ce.start_date <= ?
      ORDER BY ce.start_date ASC`,
-    [userId, startDate, endDate]
+    [userId, toMySQLDatetime(startDate), toMySQLDatetime(endDate)]
   );
   return rows;
 }
@@ -161,6 +173,9 @@ async function update(id, updates) {
     'title', 'description', 'event_type', 'start_date', 'end_date',
     'all_day', 'recurrence_rule', 'reminder_minutes', 'course_id'
   ];
+  
+  // Fields that need datetime conversion
+  const datetimeFields = ['start_date', 'end_date'];
 
   const fields = [];
   const values = [];
@@ -169,7 +184,12 @@ async function update(id, updates) {
     const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
     if (allowedFields.includes(snakeKey)) {
       fields.push(`${snakeKey} = ?`);
-      values.push(value);
+      // Convert datetime fields to MySQL format
+      if (datetimeFields.includes(snakeKey)) {
+        values.push(toMySQLDatetime(value));
+      } else {
+        values.push(value);
+      }
     }
   }
 

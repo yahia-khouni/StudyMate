@@ -10,7 +10,13 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
-  Trash2
+  Trash2,
+  User,
+  Edit3,
+  Save,
+  X,
+  Sparkles,
+  Award
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { enUS, fr } from 'date-fns/locale';
@@ -19,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { GlassCard } from '@/components/ui/card';
 import { 
   getProfile, 
   updateProfile, 
@@ -116,37 +123,49 @@ export function ProfilePage() {
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">{t('common.loading', 'Loading...')}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-2xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('profile.title', 'Profile')}</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+          {t('profile.title', 'Profile')}
+        </h1>
+        <p className="text-muted-foreground mt-1">
           {t('profile.subtitle', 'Manage your account information')}
         </p>
       </div>
 
-      <div className="space-y-6">
-        {/* Avatar Section */}
-        <div className="rounded-2xl bg-card border border-border">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">{t('profile.avatar', 'Profile Picture')}</h2>
-            <div className="flex items-center gap-6">
-              <div className="relative group">
-                <Avatar className="h-24 w-24">
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - Avatar & Quick Info */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Profile Card */}
+          <GlassCard className="p-6 text-center relative overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-br from-primary/20 via-purple-500/20 to-pink-500/20" />
+            
+            <div className="relative">
+              {/* Avatar */}
+              <div className="relative inline-block -mt-2">
+                <Avatar className="h-28 w-28 ring-4 ring-background shadow-xl">
                   <AvatarImage src={profile?.avatarUrl} alt={profile?.firstName || 'User'} />
-                  <AvatarFallback className="text-2xl bg-primary/20 text-primary">{getInitials()}</AvatarFallback>
+                  <AvatarFallback className="text-3xl bg-gradient-to-br from-primary to-purple-600 text-white font-semibold">
+                    {getInitials()}
+                  </AvatarFallback>
                 </Avatar>
                 <button
                   onClick={handleAvatarClick}
-                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute bottom-1 right-1 p-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-colors shadow-lg"
                   aria-label={t('profile.changeAvatar', 'Change avatar')}
                 >
-                  <Camera className="h-6 w-6 text-white" />
+                  <Camera className="h-4 w-4" />
                 </button>
                 <input
                   ref={fileInputRef}
@@ -156,173 +175,253 @@ export function ProfilePage() {
                   className="hidden"
                 />
               </div>
-              <div>
-                <p className="font-medium text-foreground">
+
+              {/* Name & Email */}
+              <div className="mt-4">
+                <h2 className="text-xl font-semibold text-foreground">
                   {profile?.firstName} {profile?.lastName}
-                </p>
-                <p className="text-sm text-muted-foreground">{profile?.email}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={handleAvatarClick}
-                >
-                  {t('profile.uploadPhoto', 'Upload Photo')}
-                </Button>
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.email}</p>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Personal Info */}
-        <div className="rounded-2xl bg-card border border-border">
-          <div className="p-6 flex flex-row items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">{t('profile.personalInfo', 'Personal Information')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('profile.personalInfoDesc', 'Update your personal details')}
-              </p>
-            </div>
-            {!isEditing && (
-              <Button variant="outline" onClick={() => setIsEditing(true)}>
-                {t('common.edit', 'Edit')}
-              </Button>
-            )}
-          </div>
-          <div className="px-6 pb-6 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">{t('auth.firstName', 'First Name')}</Label>
-                {isEditing ? (
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                ) : (
-                  <p className="text-sm py-2 text-foreground">{profile?.firstName || '-'}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">{t('auth.lastName', 'Last Name')}</Label>
-                {isEditing ? (
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                ) : (
-                  <p className="text-sm py-2 text-foreground">{profile?.lastName || '-'}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t('auth.email', 'Email')}</Label>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{profile?.email}</span>
+              {/* Verification Badge */}
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-muted/50">
                 {profile?.emailVerified ? (
-                  <span className="flex items-center gap-1 text-xs text-emerald-500">
-                    <CheckCircle className="h-3 w-3" />
-                    {t('profile.verified', 'Verified')}
-                  </span>
+                  <>
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="text-emerald-500">{t('profile.verified', 'Verified')}</span>
+                  </>
                 ) : (
-                  <span className="flex items-center gap-1 text-xs text-amber-500">
-                    <XCircle className="h-3 w-3" />
-                    {t('profile.notVerified', 'Not verified')}
-                  </span>
+                  <>
+                    <XCircle className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-amber-500">{t('profile.notVerified', 'Not verified')}</span>
+                  </>
                 )}
               </div>
             </div>
+          </GlassCard>
 
-            {isEditing && (
-              <div className="flex gap-2 pt-2">
-                <Button onClick={handleSave} disabled={updateMutation.isPending}>
-                  {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t('common.save', 'Save')}
-                </Button>
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
-                  {t('common.cancel', 'Cancel')}
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Account Info */}
-        <div className="rounded-2xl bg-card border border-border">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">{t('profile.accountInfo', 'Account Information')}</h2>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {t('profile.memberSince', 'Member since')}:
-              </span>
-              <span className="text-sm text-foreground">
-                {profile?.createdAt && format(parseISO(profile.createdAt), 'MMMM d, yyyy', { locale })}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Danger Zone */}
-        <div className="rounded-2xl bg-card border border-destructive/50">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-destructive flex items-center gap-2 mb-2">
-              <Shield className="h-5 w-5" />
-              {t('profile.dangerZone', 'Danger Zone')}
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              {t('profile.dangerZoneDesc', 'Irreversible and destructive actions')}
-            </p>
-            {!showDeleteConfirm ? (
-              <Button 
-                variant="destructive" 
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('profile.deleteAccount', 'Delete Account')}
-              </Button>
-            ) : (
-              <div className="space-y-4 p-4 border border-destructive/50 rounded-lg bg-destructive/5">
-                <p className="text-sm font-medium text-destructive">
-                  {t('profile.deleteWarning', 'This action cannot be undone. All your data will be permanently deleted.')}
-                </p>
-                <div className="space-y-2">
-                  <Label htmlFor="deletePassword">
-                    {t('profile.confirmPassword', 'Enter your password to confirm')}
-                  </Label>
-                  <Input
-                    id="deletePassword"
-                    type="password"
-                    value={deletePassword}
-                    onChange={(e) => setDeletePassword(e.target.value)}
-                    placeholder={t('auth.password', 'Password')}
-                  />
+          {/* Account Stats */}
+          <GlassCard className="p-5">
+            <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              {t('profile.accountInfo', 'Account Information')}
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Calendar className="h-4 w-4 text-primary" />
                 </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('profile.memberSince', 'Member since')}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {profile?.createdAt && format(parseISO(profile.createdAt), 'MMMM d, yyyy', { locale })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-500/10">
+                  <Sparkles className="h-4 w-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('profile.accountStatus', 'Status')}</p>
+                  <p className="text-sm font-medium text-emerald-500">{t('profile.active', 'Active')}</p>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* Right Column - Forms */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Personal Information */}
+          <GlassCard className="overflow-hidden">
+            <div className="p-5 sm:p-6 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <User className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-foreground">{t('profile.personalInfo', 'Personal Information')}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t('profile.personalInfoDesc', 'Update your personal details')}
+                  </p>
+                </div>
+              </div>
+              {!isEditing ? (
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
+                  <Edit3 className="h-4 w-4" />
+                  {t('common.edit', 'Edit')}
+                </Button>
+              ) : (
                 <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending} className="gap-2">
+                    {updateMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    {t('common.save', 'Save')}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-5 sm:p-6 space-y-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-sm font-medium">
+                    {t('auth.firstName', 'First Name')}
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      id="firstName"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="h-11"
+                      placeholder={t('auth.firstNamePlaceholder', 'Enter your first name')}
+                    />
+                  ) : (
+                    <div className="h-11 px-3 flex items-center rounded-lg bg-muted/50 text-foreground">
+                      {profile?.firstName || '-'}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-sm font-medium">
+                    {t('auth.lastName', 'Last Name')}
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      id="lastName"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="h-11"
+                      placeholder={t('auth.lastNamePlaceholder', 'Enter your last name')}
+                    />
+                  ) : (
+                    <div className="h-11 px-3 flex items-center rounded-lg bg-muted/50 text-foreground">
+                      {profile?.lastName || '-'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">{t('auth.email', 'Email Address')}</Label>
+                <div className="h-11 px-3 flex items-center justify-between rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-foreground">{profile?.email}</span>
+                  </div>
+                  {profile?.emailVerified ? (
+                    <span className="flex items-center gap-1 text-xs font-medium text-emerald-500">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      {t('profile.verified', 'Verified')}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
+                      <XCircle className="h-3.5 w-3.5" />
+                      {t('profile.notVerified', 'Not verified')}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('profile.emailNote', 'Email cannot be changed after registration')}
+                </p>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Danger Zone */}
+          <GlassCard className="overflow-hidden border-destructive/30">
+            <div className="p-5 sm:p-6 border-b border-destructive/20 bg-destructive/5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-destructive/10">
+                  <Shield className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-destructive">{t('profile.dangerZone', 'Danger Zone')}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {t('profile.dangerZoneDesc', 'Irreversible and destructive actions')}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-5 sm:p-6">
+              {!showDeleteConfirm ? (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-foreground">{t('profile.deleteAccount', 'Delete Account')}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {t('profile.deleteAccountDesc', 'Permanently remove your account and all associated data')}
+                    </p>
+                  </div>
                   <Button 
                     variant="destructive" 
-                    onClick={handleDeleteAccount}
-                    disabled={deleteMutation.isPending}
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="gap-2 shrink-0"
                   >
-                    {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {t('profile.confirmDelete', 'Yes, delete my account')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setShowDeleteConfirm(false);
-                      setDeletePassword('');
-                    }}
-                  >
-                    {t('common.cancel', 'Cancel')}
+                    <Trash2 className="h-4 w-4" />
+                    {t('profile.deleteAccount', 'Delete Account')}
                   </Button>
                 </div>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="space-y-4 p-4 border border-destructive/30 rounded-xl bg-destructive/5">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-destructive/10 shrink-0">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-destructive">
+                        {t('profile.confirmDeleteTitle', 'Are you sure?')}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {t('profile.deleteWarning', 'This action cannot be undone. All your data will be permanently deleted.')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="deletePassword" className="text-sm font-medium">
+                      {t('profile.confirmPassword', 'Enter your password to confirm')}
+                    </Label>
+                    <Input
+                      id="deletePassword"
+                      type="password"
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      placeholder={t('auth.password', 'Password')}
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDeleteAccount}
+                      disabled={deleteMutation.isPending}
+                      className="gap-2"
+                    >
+                      {deleteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {t('profile.confirmDelete', 'Yes, delete my account')}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeletePassword('');
+                      }}
+                    >
+                      {t('common.cancel', 'Cancel')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </GlassCard>
         </div>
       </div>
     </div>
