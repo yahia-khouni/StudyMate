@@ -1,7 +1,7 @@
 /**
  * AI Service
- * Integration with OpenRouter API for DeepSeek R1T2 Chimera (text generation)
- * and Nemotron VL (vision), plus HuggingFace Inference API for BGE-M3 embeddings
+ * Integration with OpenRouter API for Qwen3.6 Plus (text and vision)
+ * and HuggingFace Inference API for BGE-M3 embeddings
  */
 
 const axios = require('axios');
@@ -17,10 +17,11 @@ const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
 
 // Model IDs - Free tier models from OpenRouter
 const MODELS = {
-  NEMOTRON_VL: 'nvidia/nemotron-nano-12b-v2-vl:free', // Vision-capable model via OpenRouter
-  // DeepSeek R1T2 Chimera - 671B MoE model with strong reasoning (163K context)
+  // Qwen3.6 Plus - free model with 1M context, strong reasoning and coding
   // Used for all text generation: structuring, summaries, quizzes, flashcards, chat
-  TEXT_MODEL: 'tngtech/deepseek-r1t2-chimera:free',
+  TEXT_MODEL: 'qwen/qwen3.6-plus:free',
+  // Vision model - using Qwen3.6 Plus which supports images/video
+  VISION_MODEL: 'qwen/qwen3.6-plus:free',
 };
 
 // Chunking configuration
@@ -31,12 +32,12 @@ const CHUNK_CONFIG = {
 };
 
 /**
- * Clean DeepSeek R1 model response by removing <think>...</think> reasoning blocks
- * The DeepSeek R1 models emit thinking/reasoning in <think> tags before the actual answer
+ * Clean model response by removing any <think>...</think> reasoning blocks
+ * Some models emit thinking/reasoning in <think> tags before the actual answer
  * @param {string} content - Raw model response
  * @returns {string} - Cleaned response with only the actual answer
  */
-function cleanDeepSeekResponse(content) {
+function cleanModelResponse(content) {
   if (!content) return content;
   
   // Remove <think>...</think> blocks (reasoning tokens)
@@ -50,7 +51,7 @@ function cleanDeepSeekResponse(content) {
 }
 
 /**
- * Analyze a document page/image using Nemotron VL
+ * Analyze a document page/image using vision model
  * @param {string} imageBase64 - Base64 encoded image
  * @param {string} mimeType - Image MIME type
  * @param {string} language - Target language (en/fr)
@@ -101,7 +102,7 @@ Output format (JSON):
     const response = await axios.post(
       OPENROUTER_API_URL,
       {
-        model: MODELS.NEMOTRON_VL,
+        model: MODELS.VISION_MODEL,
         messages: [
           {
             role: 'system',
@@ -254,7 +255,7 @@ Output clean Markdown format only. Do not include any explanations or commentary
     );
 
     const content = response.data.choices[0]?.message?.content || rawText;
-    return cleanDeepSeekResponse(content);
+    return cleanModelResponse(content);
   } catch (error) {
     const errorDetails = error.response?.data || error.message;
     logger.error('Content structuring error:', JSON.stringify(errorDetails, null, 2));
@@ -486,7 +487,7 @@ Output format: Clean Markdown`;
     );
 
     const responseContent = response.data.choices[0]?.message?.content || '';
-    return cleanDeepSeekResponse(responseContent);
+    return cleanModelResponse(responseContent);
   } catch (error) {
     logger.error('Summary generation error:', error.response?.data || error.message);
     throw new Error(`Summary generation failed: ${error.message}`);
@@ -571,8 +572,8 @@ Output format (JSON array):
     
     logger.info(`Quiz AI response before cleaning - length: ${responseContent.length}`);
     
-    // Clean DeepSeek reasoning tokens
-    responseContent = cleanDeepSeekResponse(responseContent);
+    // Clean model reasoning tokens
+    responseContent = cleanModelResponse(responseContent);
     
     logger.info(`Quiz AI response after cleaning - length: ${responseContent.length}, content: ${responseContent.substring(0, 200)}`);
     
@@ -692,8 +693,8 @@ Output format (JSON array):
     );
 
     let responseContent = response.data.choices[0]?.message?.content || '[]';
-    // Clean DeepSeek reasoning tokens
-    responseContent = cleanDeepSeekResponse(responseContent);
+    // Clean model reasoning tokens
+    responseContent = cleanModelResponse(responseContent);
     
     // Extract JSON from response (handle markdown code blocks)
     let jsonString = responseContent;
@@ -813,7 +814,7 @@ ${contextString}`;
 
     const content = response.data.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.';
     return {
-      response: cleanDeepSeekResponse(content),
+      response: cleanModelResponse(content),
       sources: sources.slice(0, 5), // Limit to 5 sources
     };
   } catch (error) {
