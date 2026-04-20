@@ -65,7 +65,8 @@ async function runMigrations() {
     // Read migration files
     const migrationsDir = path.join(__dirname, '../../../database/migrations');
     const migrationFiles = fs.readdirSync(migrationsDir)
-      .filter((f) => f.endsWith('.sql'))
+      // Only run versioned migrations (e.g., 001_*.sql), skip manual helper scripts
+      .filter((f) => /^\d+_.*\.sql$/.test(f))
       .sort();
 
     // Run pending migrations
