@@ -1,6 +1,6 @@
 /**
  * AI Service
- * Integration with OpenRouter API for Qwen3.6 Plus (text and vision)
+ * Integration with OpenRouter API for free text + vision models
  * and HuggingFace Inference API for BGE-M3 embeddings
  */
 
@@ -16,12 +16,12 @@ const HUGGINGFACE_API_URL = 'https://api-inference.huggingface.co/models/BAAI/bg
 const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
 
 // Model IDs - Free tier models from OpenRouter
+// Override via OPENROUTER_TEXT_MODEL / OPENROUTER_VISION_MODEL in .env
 const MODELS = {
-  // Qwen3.6 Plus - free model with 1M context, strong reasoning and coding
-  // Used for all text generation: structuring, summaries, quizzes, flashcards, chat
-  TEXT_MODEL: 'qwen/qwen3.6-plus:free',
-  // Vision model - using Qwen3.6 Plus which supports images/video
-  VISION_MODEL: 'qwen/qwen3.6-plus:free',
+  // Strong free text model for structuring, summaries, quizzes, flashcards, and chat
+  TEXT_MODEL: process.env.OPENROUTER_TEXT_MODEL || 'openai/gpt-oss-120b:free',
+  // Free multimodal model for image/document understanding
+  VISION_MODEL: process.env.OPENROUTER_VISION_MODEL || 'nvidia/nemotron-nano-12b-v2-vl:free',
 };
 
 // Chunking configuration

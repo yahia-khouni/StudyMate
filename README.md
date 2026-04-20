@@ -30,8 +30,8 @@ An AI-powered study platform helping university students organize courses, gener
 - LangChain + BGE-M3 embeddings
 
 ### AI Models (via OpenRouter)
-- Nemotron Nano VL - Document/image extraction
-- DeepSeek R1 - Content generation
+- GPT-OSS 120B (free) - Content generation
+- Nemotron Nano 12B V2 VL (free) - Document/image extraction
 
 ## Prerequisites
 
