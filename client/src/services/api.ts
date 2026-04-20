@@ -29,6 +29,26 @@ let failedQueue: Array<{
   reject: (error: unknown) => void;
 }> = [];
 
+const REFRESH_ENDPOINT = '/auth/refresh';
+const AUTH_ENDPOINTS_WITHOUT_REFRESH = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+  '/auth/resend-verification',
+];
+
+function shouldSkipRefresh(url?: string): boolean {
+  if (!url) return false;
+
+  if (url.includes(REFRESH_ENDPOINT)) {
+    return true;
+  }
+
+  return AUTH_ENDPOINTS_WITHOUT_REFRESH.some((endpoint) => url.includes(endpoint));
+}
+
 const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -44,51 +64,67 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const status = error.response?.status;
+    const requestUrl = originalRequest?.url;
 
-    // If 401 and not already retrying
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        // Wait for the refresh to complete
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        // Try to refresh the token
-        const response = await api.post('/auth/refresh');
-        const { accessToken } = response.data;
-
-        localStorage.setItem('accessToken', accessToken);
-        processQueue(null, accessToken);
-
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        }
-        return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        // Clear tokens - let the auth store/routes handle redirect
-        localStorage.removeItem('accessToken');
-        // Dispatch custom event for auth state to listen to
-        window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+    if (
+      status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry ||
+      shouldSkipRefresh(requestUrl)
+    ) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    if (isRefreshing) {
+      // Wait for the in-flight refresh to finish
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      })
+        .then((token) => {
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
+          return api(originalRequest);
+        })
+        .catch((err) => Promise.reject(err));
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      // Use plain axios here to avoid intercepting the refresh request itself.
+      const response = await axios.post(
+        `${API_BASE_URL}${REFRESH_ENDPOINT}`,
+        {},
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      const { accessToken } = response.data;
+
+      localStorage.setItem('accessToken', accessToken);
+      processQueue(null, accessToken);
+
+      if (originalRequest.headers) {
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+      }
+
+      return api(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      // Clear tokens - let the auth store/routes handle redirect
+      localStorage.removeItem('accessToken');
+      // Dispatch custom event for auth state to listen to
+      window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 
