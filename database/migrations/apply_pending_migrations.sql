@@ -2,7 +2,7 @@
 -- Manual Migration Script for Existing Databases
 -- Run this if you already have 001_initial_schema applied
 -- =====================================================
--- This script applies migrations 007 and 008
+-- This script applies migrations 007, 008, and 009
 
 USE studyai;
 
@@ -80,4 +80,17 @@ PREPARE stmt FROM @query;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
-SELECT 'Migrations 007 and 008 applied successfully!' AS status;
+-- =====================================================
+-- Migration 009: Add time_taken_seconds to quiz_attempts
+-- =====================================================
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_SCHEMA = 'studyai' AND TABLE_NAME = 'quiz_attempts' AND COLUMN_NAME = 'time_taken_seconds');
+SET @query = IF(@col_exists = 0, 
+    'ALTER TABLE quiz_attempts ADD COLUMN time_taken_seconds INT NULL AFTER passed', 
+    'SELECT "Column time_taken_seconds already exists in quiz_attempts"');
+PREPARE stmt FROM @query;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SELECT 'Migrations 007, 008, and 009 applied successfully!' AS status;

@@ -206,6 +206,7 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
     -- Results
     score DECIMAL(5,2) NOT NULL, -- Percentage (0-100)
     passed BOOLEAN NOT NULL, -- score >= 80%
+    time_taken_seconds INT NULL,
     
     -- Timestamps
     started_at DATETIME DEFAULT CURRENT_TIMESTAMP,

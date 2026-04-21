@@ -228,7 +228,7 @@ async function findAttemptsByQuizAndUser(quizId, userId) {
      JOIN quizzes q ON a.quiz_id = q.id
      JOIN chapters ch ON q.chapter_id = ch.id
      WHERE a.quiz_id = ? AND a.user_id = ?
-     ORDER BY a.created_at DESC`,
+     ORDER BY a.started_at DESC`,
     [quizId, userId]
   );
   return rows.map(formatAttempt);
@@ -255,7 +255,7 @@ async function findAttemptsByUser(userId, options = {}) {
     params.push(options.courseId);
   }
   
-  query += ' ORDER BY a.created_at DESC';
+  query += ' ORDER BY a.started_at DESC';
   
   if (options.limit) {
     query += ' LIMIT ?';
@@ -388,7 +388,7 @@ function formatAttempt(attempt) {
     score: parseFloat(attempt.score),
     passed: !!attempt.passed,
     timeTakenSeconds: attempt.time_taken_seconds,
-    createdAt: attempt.created_at,
+    createdAt: attempt.created_at || attempt.started_at,
   };
 }
 
